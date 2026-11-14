@@ -6,9 +6,9 @@
         </a>
 
         <nav class="hidden md:flex items-center gap-8 text-sm font-medium">
-            <a href="#" class="hover:text-brand-600">Beranda</a>
-            <a href="#" class="hover:text-brand-600">Katalog</a>
-            <a href="#" class="hover:text-brand-600">Kategori</a>
+            <a href="/preview/home" class="hover:text-brand-600">Beranda</a>
+            <a href="/preview/katalog" class="hover:text-brand-600">Katalog</a>
+            <a href="/preview/katalog" class="hover:text-brand-600">Kategori</a>
         </nav>
 
         <div class="flex items-center gap-4 text-sm">

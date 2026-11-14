@@ -17,3 +17,5 @@ Route::get('/', function () {
     return view('welcome');
 });
 Route::view('/preview/home', 'home');
+Route::view('/preview/katalog', 'products.index');
+Route::view('/preview/produk', 'products.show');

@@ -21,8 +21,8 @@
             Tampil Stylish<br>Setiap Hari
         </h1>
         <p class="mt-4 text-gray-600">Fashion terbaik, harga terjangkau!</p>
-        <a href="#" class="inline-block mt-6 bg-brand-600 text-white px-6 py-3
-                           rounded-lg font-medium hover:bg-brand-700">
+        <a href="/preview/katalog" class="inline-block mt-6 bg-brand-600 text-white px-6 py-3
+                                          rounded-lg font-medium hover:bg-brand-700">
             Belanja Sekarang →
         </a>
     </div>
@@ -32,7 +32,7 @@
 <section class="max-w-6xl mx-auto px-4 py-10">
     <div class="flex gap-6 overflow-x-auto">
         @foreach ($categories as $category)
-            <a href="#" class="flex-shrink-0 text-center">
+            <a href="/preview/katalog" class="flex-shrink-0 text-center">
                 <div class="w-20 h-20 rounded-full bg-gray-100 flex items-center
                             justify-center text-xs text-gray-400">
                     ikon
@@ -47,7 +47,7 @@
 <section class="max-w-6xl mx-auto px-4">
     <div class="flex items-center justify-between mb-4">
         <h2 class="text-xl font-bold">Produk Terlaris</h2>
-        <a href="#" class="text-sm text-brand-600 font-medium">Lihat Semua →</a>
+        <a href="/preview/katalog" class="text-sm text-brand-600 font-medium">Lihat Semua →</a>
     </div>
 
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
