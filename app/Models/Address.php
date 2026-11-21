@@ -11,18 +11,41 @@ class Address extends Model
 
     protected $fillable = [
         'user_id', 'label', 'receiver_name', 'receiver_phone',
-        'city_id', 'street_address', 'is_default',
+        'province', 'city', 'district', 'postal_code',
+        'street_address', 'latitude', 'longitude', 'is_default',
     ];
 
-    protected $casts = ['is_default' => 'boolean'];
+    protected $casts = [
+        'is_default' => 'boolean',
+        'latitude'   => 'float',
+        'longitude'  => 'float',
+    ];
+
+    /** Alamat satu baris: jalan, kecamatan, kota, provinsi, kode pos. */
+    public function getFullAddressAttribute(): string
+    {
+        return collect([
+            $this->street_address,
+            $this->district,
+            $this->city,
+            $this->province,
+            $this->postal_code,
+        ])->filter()->implode(', ');
+    }
+
+    /** Tautan ke peta OpenStreetMap, atau null kalau pembeli tidak menandai lokasi. */
+    public function getMapUrlAttribute(): ?string
+    {
+        if ($this->latitude === null || $this->longitude === null) {
+            return null;
+        }
+
+        return "https://www.openstreetmap.org/?mlat={$this->latitude}&mlon={$this->longitude}"
+            . "#map=17/{$this->latitude}/{$this->longitude}";
+    }
 
     public function user()
     {
         return $this->belongsTo(User::class);
-    }
-
-    public function city()
-    {
-        return $this->belongsTo(City::class);
     }
 }
