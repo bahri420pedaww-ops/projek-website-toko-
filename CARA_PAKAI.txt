@@ -1,35 +1,43 @@
-PAKET KATALOG DAN DETAIL PRODUK (PUBLIK)
+PAKET KERANJANG BELANJA
 
-1. Ekstrak zip ke folder projek (C:\laragon\www\Website-Penjualan-Toko).
-   Semua file BARU, tidak ada yang menimpa file lama.
-   Pastikan hasilnya: routes\shop.php ada di sebelah routes\web.php.
+1. Pastikan pekerjaan sebelumnya sudah di-commit (git status harus "working tree clean").
 
-2. Buka routes/web.php, tambahkan SATU baris ini (sebelum require auth.php,
-   di dekat baris require admin.php):
+2. Ekstrak zip ke folder projek (C:\laragon\www\Website-Penjualan-Toko).
+   Windows akan bertanya "Replace or Skip" untuk 3 file ini. Pilih REPLACE (timpa):
+       routes\shop.php
+       resources\views\shop\layout.blade.php
+       resources\views\shop\products\show.blade.php
+   Ketiganya adalah file placeholder dari paket katalog; isinya hanya DITAMBAH
+   (route keranjang, tautan keranjang di header, form tambah ke keranjang).
+   Kalau temanmu sudah mengubah layout atau show.blade.php, JANGAN timpa; kabari saya.
 
-       require __DIR__.'/shop.php';
+   File lain semuanya baru. Tidak perlu mengedit routes/web.php lagi.
 
-3. Terminal Laragon (folder projek):
+3. Pastikan app/Models/User.php punya method cartItems():
+       public function cartItems() { return $this->hasMany(CartItem::class); }
+   (Sudah ada kalau kamu menjalankan TAMBAHAN_User.txt dari paket database.)
 
+4. Terminal Laragon (folder projek):
        php artisan optimize:clear
-       php artisan route:list --name=shop
+       php artisan route:list --name=cart
+   Harus muncul cart.index, cart.store, cart.update, cart.destroy, cart.clear.
 
-   Harus muncul shop.products.index dan shop.products.show.
-   Pastikan "npm run dev" berjalan di terminal lain supaya tampilan tidak polos.
+5. Tes (npm run dev harus berjalan):
+   a. Tanpa login, buka /produk/slug-produk-yang-ada -> tombol "Masuk untuk membeli".
+      Buka /keranjang -> diarahkan ke login.
+   b. Login pembeli@toko.test / password, buka detail produk, isi jumlah 2,
+      klik "Tambah ke Keranjang" -> pindah ke /keranjang, produk muncul.
+   c. Tambahkan produk yang sama lagi -> jumlah bertambah, tidak ada baris ganda.
+   d. Isi jumlah lebih besar dari stok -> muncul peringatan kuning, jumlah disesuaikan.
+   e. Ubah jumlah lewat tombol Perbarui, hapus satu item, kosongkan keranjang.
+   f. Taruh produk di keranjang, lalu di /admin/products nonaktifkan produk itu
+      -> di keranjang barisnya merah "tidak lagi tersedia" dan tidak masuk subtotal.
+   g. Ubah stok produk jadi 0 -> baris merah "Stok habis".
+   h. Header menampilkan jumlah barang: Keranjang (n).
 
-4. Tes di browser (tanpa login juga bisa):
-       /produk
-       /produk?q=nama
-       /produk?sort=termurah
-       /produk?kategori=slug-kategori
-       /produk/slug-produk
-   Tes juga: nonaktifkan satu produk lewat /admin/products, lalu buka alamat
-   detailnya. Harus muncul 404.
-
-5. Commit dan push:
-
+6. Commit dan push:
        git add .
-       git commit -m "Tambah katalog dan detail produk (publik)"
+       git commit -m "Tambah keranjang belanja"
        git push
 
-6. Kirim docs/KONTRAK.md ke teman (frontend).
+7. Kirim docs/KONTRAK_KERANJANG.md ke teman (frontend).

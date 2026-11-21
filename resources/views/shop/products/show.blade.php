@@ -46,11 +46,8 @@
                 <span class="text-gray-500"> &middot; Berat {{ number_format($product->weight_gram, 0, ',', '.') }} gram</span>
             </p>
 
-            {{-- Tombol ini akan diaktifkan di langkah Keranjang --}}
-            <button type="button" disabled
-                    class="mt-5 px-6 py-3 bg-gray-300 text-gray-600 text-sm font-semibold rounded-md cursor-not-allowed">
-                Tambah ke Keranjang (segera hadir)
-            </button>
+            {{-- Form tambah ke keranjang (logika ada di backend) --}}
+            @include('shop.cart._add_form', ['product' => $product])
 
             @if ($product->description)
                 <div class="mt-6 text-sm leading-relaxed">

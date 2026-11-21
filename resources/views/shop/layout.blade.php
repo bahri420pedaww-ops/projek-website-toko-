@@ -18,6 +18,10 @@
             <nav class="flex items-center gap-4 text-sm">
                 <a href="{{ route('shop.products.index') }}" class="hover:underline">Produk</a>
                 @auth
+                    {{-- Jumlah barang di keranjang: Auth::user()->cartItems()->sum('quantity') --}}
+                    <a href="{{ route('cart.index') }}" class="hover:underline">
+                        Keranjang ({{ (int) Auth::user()->cartItems()->sum('quantity') }})
+                    </a>
                     @if (Auth::user()->isAdmin())
                         <a href="{{ route('admin.dashboard') }}" class="hover:underline">Admin</a>
                     @endif
@@ -31,6 +35,7 @@
     </header>
 
     <main class="max-w-7xl mx-auto px-4 py-8">
+        @include('shop._flash')
         @yield('content')
     </main>
 </body>
