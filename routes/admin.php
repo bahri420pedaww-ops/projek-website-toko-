@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\ProductImageController;
+use App\Http\Controllers\Admin\ShippingMethodController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -24,4 +25,9 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 
     // Pelanggan dan alamatnya (hanya lihat)
     Route::resource('customers', CustomerController::class)->only(['index', 'show']);
+
+    // Layanan kurir dan tarif ongkir per zona
+    Route::resource('shipping-methods', ShippingMethodController::class)
+        ->parameters(['shipping-methods' => 'method'])
+        ->except(['show', 'destroy']);
 });

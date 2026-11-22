@@ -1,31 +1,74 @@
-PAKET ADMIN: PELANGGAN DAN ALAMAT (hanya lihat)
+PAKET ONGKIR DINAMIS (berat + kota tujuan)
 
-1. Pastikan pekerjaan sebelumnya sudah di-commit (git status = "working tree clean").
+Ongkir = tarif per kg (menurut ZONA tujuan) x berat ditagih (dibulatkan ke atas, minimal 1 kg).
+Zona 1 = satu kota dengan toko, 2 = satu provinsi, 3 = satu pulau besar, 4 = beda pulau.
+Alamat berupa teks bebas, jadi kota dan provinsi dicocokkan setelah dinormalkan
+(huruf kecil, tanpa tanda baca, awalan "Kota"/"Kabupaten"/"Kab." diabaikan).
+
+1. Pastikan checkout sebelumnya sudah di-commit (git status = "working tree clean").
 
 2. Ekstrak zip ke folder projek (C:\laragon\www\Website-Penjualan-Toko).
-   Windows akan bertanya "Replace or Skip" untuk 2 file ini. Pilih REPLACE:
+   Windows akan bertanya "Replace or Skip". Pilih REPLACE untuk semua file yang ditanyakan:
+       app\Models\ShippingMethod.php
+       app\Models\Order.php
+       app\Services\CheckoutService.php
+       app\Http\Controllers\Shop\CheckoutController.php
        routes\admin.php
+       resources\views\shop\checkout\index.blade.php
+       resources\views\shop\orders\show.blade.php
        resources\views\admin\dashboard.blade.php
-   Keduanya buatan paket CRUD sebelumnya. Isinya hanya DITAMBAH (route pelanggan dan
-   satu tautan di dashboard), tidak ada yang hilang.
-   File lain semuanya baru. Tidak perlu mengedit routes/web.php.
+       docs\KONTRAK_CHECKOUT.md
+   Semuanya buatan paket sebelumnya. Kalau teman sudah mengubah view checkout atau
+   detail pesanan, JANGAN timpa view-nya; kabari saya.
+   File baru: config\shipping.php, ShippingRate, ShippingCalculator, controller dan view
+   admin pengiriman, seeder tarif, dan migration.
 
-3. Terminal Laragon (folder projek):
+3. Atur LOKASI TOKO di file .env (tambahkan dua baris ini, sesuaikan):
+       SHOP_ORIGIN_CITY="Padang"
+       SHOP_ORIGIN_PROVINCE="Sumatera Barat"
+   (Nilai di atas hanya contoh bawaan. Ganti dengan lokasi toko yang sebenarnya.)
+
+4. Terminal Laragon (folder projek). Pakai "migrate" BIASA, bukan migrate:fresh:
+       php artisan migrate
+       php artisan db:seed --class=ShippingRateSeeder
        php artisan optimize:clear
-       php artisan route:list --name=admin.customers
-   Harus muncul admin.customers.index dan admin.customers.show.
+   Cek di HeidiSQL: tabel "shipping_rates" berisi 16 baris (4 layanan x 4 zona), dan tabel
+   "orders" punya kolom total_weight_gram dan shipping_etd.
+   Tarif di seeder hanya CONTOH. Ubah sesuai tarif kurir lewat /admin/shipping-methods.
 
-4. Tes:
-   a. Login admin@toko.test / password, buka /admin -> ada tautan "Pelanggan dan Alamat".
-   b. Buka daftar pelanggan -> pembeli@toko.test dan akun pembeli lain muncul,
-      kolom "Alamat" berisi jumlah alamat tersimpan. Akun admin TIDAK muncul.
-   c. Cari dengan nama, email, atau nomor HP.
-   d. Klik "Lihat" -> tampil data akun dan semua alamat (alamat utama paling atas),
-      lengkap dengan tautan "Lihat di peta" bila pembeli menandai lokasi.
-   e. Login sebagai pembeli, buka /admin/customers -> harus 403.
-   f. Login admin, buka /admin/customers/{id akun admin} -> harus 404.
+   Supaya "php artisan migrate:fresh --seed" nanti ikut mengisi tarif, tambahkan
+   ShippingRateSeeder::class setelah ShippingMethodSeeder::class di dalam
+   $this->call([...]) pada database/seeders/DatabaseSeeder.php.
 
-5. Commit dan push:
+5. Pastikan produk punya BERAT. Buka /admin/products, ubah produk, isi "Berat (gram)".
+   Berat 0 tetap ditagih minimal 1 kg.
+
+6. Tes:
+   a. /admin -> ada tautan "Pengiriman dan Tarif Ongkir". Daftar menampilkan 4 layanan
+      dengan tarif per zona. Ubah satu tarif lalu simpan -> berubah di daftar.
+   b. Uji penentuan zona lewat tinker (sesuaikan dengan lokasi tokomu; contoh jika toko
+      di Padang, Sumatera Barat):
+          php artisan tinker
+          >>> $c = app(App\Services\ShippingCalculator::class);
+          >>> $c->zoneFor('Padang', 'Sumatera Barat');         // 1
+          >>> $c->zoneFor('Kota Padang', 'sumatera barat');    // 1
+          >>> $c->zoneFor('Bukittinggi', 'Sumatera Barat');    // 2
+          >>> $c->zoneFor('Medan', 'Sumatera Utara');          // 3
+          >>> $c->zoneFor('Bandung', 'Jawa Barat');            // 4
+   c. Buat dua alamat pembeli di kota berbeda zona. Isi keranjang, buka /checkout.
+      Ganti alamat -> ongkir tiap kurir BERUBAH tanpa memuat ulang halaman.
+   d. Cek hitungannya: berat 1.200 gram ditagih 2 kg, jadi ongkir = tarif per kg x 2.
+      Berat 1.000 gram ditagih 1 kg. Berat 0 gram ditagih 1 kg.
+   e. Di admin, kosongkan tarif zona 4 pada satu layanan. Di checkout, pilih alamat luar
+      pulau -> layanan itu tampil "Tidak melayani tujuan ini" dan tidak bisa dipilih.
+   f. Buat pesanan -> di HeidiSQL, tabel orders: shipping_cost, total_weight_gram, dan
+      shipping_etd sesuai. grand_total = subtotal + shipping_cost.
+   g. Ubah tarif di admin setelah pesanan dibuat -> pesanan lama TIDAK berubah.
+   h. Ubah kota di alamat setelah pesanan dibuat -> pesanan lama TIDAK berubah.
+
+7. Commit dan push:
        git add .
-       git commit -m "Admin: lihat pelanggan dan alamat"
+       git commit -m "Ongkir dinamis berdasarkan berat dan kota tujuan"
        git push
+
+8. Kirim docs/KONTRAK_CHECKOUT.md yang baru ke teman (frontend).

@@ -17,12 +17,12 @@ class Order extends Model
     protected $fillable = [
         'order_code', 'user_id', 'shipping_method_id',
         'receiver_name', 'receiver_phone', 'shipping_address',
-        'city_name', 'province_name', 'postal_code',
-        'subtotal', 'shipping_cost', 'discount_total', 'grand_total',
+        'city_name', 'province_name', 'postal_code', 'total_weight_gram',
+        'subtotal', 'shipping_cost', 'shipping_etd', 'discount_total', 'grand_total',
         'status', 'note',
     ];
 
-    /** Contoh hasil: INV-20261110-AB12CD */
+    /** Contoh hasil: INV-20261123-AB12CD */
     public static function generateCode(): string
     {
         do {

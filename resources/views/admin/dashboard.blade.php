@@ -18,6 +18,10 @@
                class="block bg-white p-6 shadow-sm sm:rounded-lg text-gray-800 hover:bg-gray-50">
                 Pelanggan dan Alamat
             </a>
+            <a href="{{ route('admin.shipping-methods.index') }}"
+               class="block bg-white p-6 shadow-sm sm:rounded-lg text-gray-800 hover:bg-gray-50">
+                Pengiriman dan Tarif Ongkir
+            </a>
         </div>
     </div>
 </x-app-layout>
