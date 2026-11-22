@@ -1,0 +1,31 @@
+PAKET ADMIN: PELANGGAN DAN ALAMAT (hanya lihat)
+
+1. Pastikan pekerjaan sebelumnya sudah di-commit (git status = "working tree clean").
+
+2. Ekstrak zip ke folder projek (C:\laragon\www\Website-Penjualan-Toko).
+   Windows akan bertanya "Replace or Skip" untuk 2 file ini. Pilih REPLACE:
+       routes\admin.php
+       resources\views\admin\dashboard.blade.php
+   Keduanya buatan paket CRUD sebelumnya. Isinya hanya DITAMBAH (route pelanggan dan
+   satu tautan di dashboard), tidak ada yang hilang.
+   File lain semuanya baru. Tidak perlu mengedit routes/web.php.
+
+3. Terminal Laragon (folder projek):
+       php artisan optimize:clear
+       php artisan route:list --name=admin.customers
+   Harus muncul admin.customers.index dan admin.customers.show.
+
+4. Tes:
+   a. Login admin@toko.test / password, buka /admin -> ada tautan "Pelanggan dan Alamat".
+   b. Buka daftar pelanggan -> pembeli@toko.test dan akun pembeli lain muncul,
+      kolom "Alamat" berisi jumlah alamat tersimpan. Akun admin TIDAK muncul.
+   c. Cari dengan nama, email, atau nomor HP.
+   d. Klik "Lihat" -> tampil data akun dan semua alamat (alamat utama paling atas),
+      lengkap dengan tautan "Lihat di peta" bila pembeli menandai lokasi.
+   e. Login sebagai pembeli, buka /admin/customers -> harus 403.
+   f. Login admin, buka /admin/customers/{id akun admin} -> harus 404.
+
+5. Commit dan push:
+       git add .
+       git commit -m "Admin: lihat pelanggan dan alamat"
+       git push
