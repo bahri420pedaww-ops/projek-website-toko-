@@ -1,51 +1,31 @@
-PAKET ALAMAT VERSI PETA (menggantikan paket alamat sebelumnya)
-
-Perubahan: pilihan kota dihapus. Provinsi, kota, kecamatan, kode pos diisi bebas,
-dan pembeli bisa menandai lokasi di peta (Leaflet + OpenStreetMap).
+PAKET ADMIN: PELANGGAN DAN ALAMAT (hanya lihat)
 
 1. Pastikan pekerjaan sebelumnya sudah di-commit (git status = "working tree clean").
 
 2. Ekstrak zip ke folder projek (C:\laragon\www\Website-Penjualan-Toko).
-   Windows akan bertanya "Replace or Skip". Pilih REPLACE untuk semua file yang ditanyakan:
-       app\Models\Address.php
-       app\Http\Requests\AddressRequest.php
-       app\Http\Controllers\Account\AddressController.php
-       resources\views\account\addresses\_form.blade.php
-       resources\views\account\addresses\index.blade.php
-       resources\views\account\addresses\create.blade.php
-       resources\views\account\addresses\edit.blade.php
-       docs\KONTRAK_ALAMAT.md
-   Semuanya file buatan paket alamat sebelumnya. Kalau teman sudah mengubah view alamat,
-   JANGAN timpa view-nya; kabari saya.
-   File baru: database\migrations\2026_11_22_000001_update_addresses_for_free_text_and_map.php
+   Windows akan bertanya "Replace or Skip" untuk 2 file ini. Pilih REPLACE:
+       routes\admin.php
+       resources\views\admin\dashboard.blade.php
+   Keduanya buatan paket CRUD sebelumnya. Isinya hanya DITAMBAH (route pelanggan dan
+   satu tautan di dashboard), tidak ada yang hilang.
+   File lain semuanya baru. Tidak perlu mengedit routes/web.php.
 
-3. Terminal Laragon (folder projek). Pakai "migrate" BIASA, bukan migrate:fresh,
-   supaya alamat yang sudah kamu buat tidak hilang (data kota lama otomatis disalin
-   menjadi teks):
-
-       php artisan migrate
+3. Terminal Laragon (folder projek):
        php artisan optimize:clear
+       php artisan route:list --name=admin.customers
+   Harus muncul admin.customers.index dan admin.customers.show.
 
-   Cek di HeidiSQL: tabel "addresses" kini punya kolom province, city, district,
-   postal_code, latitude, longitude, dan TIDAK punya city_id lagi.
-
-4. Tes (login pembeli@toko.test / password, npm run dev berjalan, komputer ONLINE):
-   a. Buka /akun/alamat/tambah. Peta tampil (bukan kotak abu-abu kosong).
-   b. Klik satu titik di peta -> pin muncul, provinsi/kota/kecamatan/kode pos terisi.
-      Geser pin -> isian ikut berubah.
-   c. Ketik nama tempat di kotak "Cari" (misalnya nama kota) -> peta pindah ke sana.
-   d. Ubah isian hasil otomatis secara manual -> tetap bisa disimpan.
-   e. Simpan -> di daftar alamat muncul tautan "Lihat di peta".
-   f. Ubah alamat tadi -> pin muncul di titik yang tersimpan, isian tidak tertimpa.
-   g. Tambah alamat TANPA menyentuh peta, isi semua manual -> berhasil.
-   h. Kode pos "123" -> ditolak. Nomor HP "12345" -> ditolak.
-   i. Alamat lama (dibuat sebelum update) tetap tampil lengkap dengan kota dan provinsi.
-   j. Tombol "Lokasi saya": hanya jalan di http://localhost atau https. Di alamat
-      .test biasanya diblokir browser, itu normal.
+4. Tes:
+   a. Login admin@toko.test / password, buka /admin -> ada tautan "Pelanggan dan Alamat".
+   b. Buka daftar pelanggan -> pembeli@toko.test dan akun pembeli lain muncul,
+      kolom "Alamat" berisi jumlah alamat tersimpan. Akun admin TIDAK muncul.
+   c. Cari dengan nama, email, atau nomor HP.
+   d. Klik "Lihat" -> tampil data akun dan semua alamat (alamat utama paling atas),
+      lengkap dengan tautan "Lihat di peta" bila pembeli menandai lokasi.
+   e. Login sebagai pembeli, buka /admin/customers -> harus 403.
+   f. Login admin, buka /admin/customers/{id akun admin} -> harus 404.
 
 5. Commit dan push:
        git add .
-       git commit -m "Alamat: isian bebas dan pilih lokasi lewat peta"
+       git commit -m "Admin: lihat pelanggan dan alamat"
        git push
-
-6. Kirim docs/KONTRAK_ALAMAT.md yang baru ke teman (frontend).

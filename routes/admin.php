@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\ProductImageController;
 use Illuminate\Support\Facades\Route;
@@ -20,4 +21,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         ->name('products.images.destroy');
     Route::patch('products/{product}/images/{image}/primary', [ProductImageController::class, 'setPrimary'])
         ->name('products.images.primary');
+
+    // Pelanggan dan alamatnya (hanya lihat)
+    Route::resource('customers', CustomerController::class)->only(['index', 'show']);
 });

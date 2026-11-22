@@ -14,6 +14,10 @@
                class="block bg-white p-6 shadow-sm sm:rounded-lg text-gray-800 hover:bg-gray-50">
                 Kelola Produk
             </a>
+            <a href="{{ route('admin.customers.index') }}"
+               class="block bg-white p-6 shadow-sm sm:rounded-lg text-gray-800 hover:bg-gray-50">
+                Pelanggan dan Alamat
+            </a>
         </div>
     </div>
 </x-app-layout>
