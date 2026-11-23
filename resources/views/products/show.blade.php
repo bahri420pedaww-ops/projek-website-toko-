@@ -1,139 +1,98 @@
 @extends('layouts.app')
 @section('title', 'Detail Produk - StyleShop')
 
-@php
-    // DATA CONTOH sementara. Nanti diganti data dari controller.
-    $product = [
-        'name'        => 'Kaos Oversize Premium',
-        'price'       => 99000,
-        'old_price'   => 149000,
-        'rating'      => 4.8,
-        'reviews'     => 1245,
-        'description' => 'Kaos oversize dengan bahan cotton combed premium, nyaman dipakai seharian.',
-        'sizes'       => ['S', 'M', 'L', 'XL'],
-    ];
-    $discount = floor((1 - $product['price'] / $product['old_price']) * 100);
-@endphp
-
 @section('content')
-<div class="max-w-6xl mx-auto px-4 py-8">
-
-    {{-- Tombol kembali --}}
-    <a href="/preview/katalog" class="inline-flex items-center gap-2 text-sm font-medium
-                                      text-gray-600 hover:text-brand-600 mb-6">
-        ← Kembali ke Katalog
-    </a>
-
-    <div class="md:flex md:gap-10">
-
-        {{-- Galeri foto --}}
-        <div class="md:w-1/2 mb-6 md:mb-0">
-            <div class="flex gap-3">
-                <div class="flex-1 h-80 md:h-[420px] bg-gray-200 rounded-xl flex items-center
-                            justify-center text-gray-400 text-sm">
-                    foto utama
+<div class="max-w-6xl mx-auto px-4 py-8 md:py-12">
+    
+    <!-- Breadcrumb (Jejak navigasi) -->
+    <nav class="flex text-sm text-gray-500 mb-8" aria-label="Breadcrumb">
+        <ol class="inline-flex items-center space-x-1 md:space-x-3">
+            <li class="inline-flex items-center">
+                <a href="/" class="hover:text-brand-600 transition-colors">Beranda</a>
+            </li>
+            <li>
+                <div class="flex items-center">
+                    <svg class="w-4 h-4 text-gray-400 mx-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path></svg>
+                    <a href="/preview/katalog" class="ml-1 hover:text-brand-600 md:ml-2 transition-colors">Katalog</a>
                 </div>
-                <div class="flex flex-col gap-3 w-20">
-                    @foreach ([1, 2, 3] as $n)
-                        <div class="h-24 bg-gray-200 rounded-lg flex items-center justify-center
-                                    text-gray-400 text-xs">
-                            foto {{ $n }}
-                        </div>
-                    @endforeach
+            </li>
+            <li aria-current="page">
+                <div class="flex items-center">
+                    <svg class="w-4 h-4 text-gray-400 mx-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path></svg>
+                    <span class="ml-1 text-gray-800 font-medium md:ml-2">Kaos Oversize Hitam</span>
                 </div>
+            </li>
+        </ol>
+    </nav>
+
+    <!-- Konten Utama: Kiri Gambar, Kanan Info -->
+    <div class="flex flex-col md:flex-row gap-8 lg:gap-12">
+        
+        <!-- KIRI: Gambar Produk -->
+        <div class="w-full md:w-1/2">
+            <div class="bg-gray-100 rounded-2xl overflow-hidden shadow-sm border border-gray-100 group">
+                <!-- Gambar disamakan dengan data dummy di home -->
+                <img src="https://images.unsplash.com/photo-1618354691373-d851c5c3a990?w=1000&q=80" 
+                     alt="Kaos Oversize Hitam" 
+                     class="w-full h-auto object-cover aspect-square group-hover:scale-105 transition-transform duration-500">
             </div>
         </div>
 
-        {{-- Informasi produk --}}
-        <div class="md:w-1/2">
-            <h1 class="text-2xl font-bold">{{ $product['name'] }}</h1>
-
-            <div class="flex items-center gap-3 mt-3">
-                <span class="text-3xl font-bold text-brand-600">
-                    Rp {{ number_format($product['price'], 0, ',', '.') }}
-                </span>
-                <span class="text-gray-400 line-through">
-                    Rp {{ number_format($product['old_price'], 0, ',', '.') }}
-                </span>
-                <span class="bg-brand-600 text-white text-xs font-semibold px-2 py-1 rounded">
-                    -{{ $discount }}%
-                </span>
+        <!-- KANAN: Info & Beli -->
+        <div class="w-full md:w-1/2 flex flex-col justify-center">
+            
+            <!-- Judul & Harga -->
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-2">Kaos Oversize Hitam</h1>
+            <p class="text-3xl font-bold text-brand-600 mb-6">Rp 99.000</p>
+            
+            <!-- Deskripsi Singkat -->
+            <div class="mb-8 border-t border-gray-100 pt-6">
+                <h3 class="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-3">Deskripsi Produk</h3>
+                <p class="text-gray-600 leading-relaxed">
+                    Kaos oversize berbahan katun premium yang sangat nyaman dipakai sehari-hari. 
+                    Potongan longgar (oversize) memberikan gaya kasual yang stylish. Jahitan rapi dan 
+                    bahan adem, cocok untuk cuaca Indonesia.
+                </p>
             </div>
 
-            <p class="mt-2 text-sm">
-                <span class="text-yellow-500">★ {{ $product['rating'] }}</span>
-                <span class="text-gray-500">({{ number_format($product['reviews'], 0, ',', '.') }} ulasan)</span>
-            </p>
-
-            <p class="mt-4 text-gray-600 text-sm leading-relaxed">
-                {{ $product['description'] }}
-            </p>
-
-            {{-- Ukuran --}}
-            <div class="mt-6">
-                <p class="font-semibold text-sm mb-2">Ukuran:</p>
-                <div class="flex gap-3">
-                    @foreach ($product['sizes'] as $size)
-                        <label class="cursor-pointer">
-                            <input type="radio" name="size" value="{{ $size }}"
-                                   class="peer sr-only" {{ $size === 'M' ? 'checked' : '' }}>
-                            <span class="block w-12 h-10 leading-10 text-center rounded-lg border
-                                         text-sm font-medium bg-white
-                                         peer-checked:border-brand-600 peer-checked:bg-brand-50
-                                         peer-checked:text-brand-600">
-                                {{ $size }}
-                            </span>
-                        </label>
-                    @endforeach
+            <!-- Info Stok & Ukuran -->
+            <div class="flex items-center gap-6 mb-8 text-sm bg-gray-50 p-4 rounded-xl border border-gray-100">
+                <div class="flex items-center gap-2 text-gray-600">
+                    <span class="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse"></span>
+                    Stok Tersedia (12)
+                </div>
+                <div class="w-px h-4 bg-gray-300"></div>
+                <div class="flex items-center gap-2 text-gray-600">
+                    <span class="font-medium text-gray-900">Ukuran:</span> M, L, XL
                 </div>
             </div>
 
-            {{-- Jumlah --}}
-            <div class="mt-6">
-                <p class="font-semibold text-sm mb-2">Jumlah:</p>
-                <div class="inline-flex items-center border rounded-lg bg-white">
-                    <button type="button" id="qty-minus"
-                            class="w-10 h-10 text-brand-600 text-lg hover:bg-brand-50">−</button>
-                    <input id="qty" type="text" value="1" readonly
-                           class="w-12 h-10 text-center border-x focus:outline-none">
-                    <button type="button" id="qty-plus"
-                            class="w-10 h-10 text-brand-600 text-lg hover:bg-brand-50">+</button>
+            <!-- Form Tambah ke Keranjang -->
+            <form action="/cart/add" method="POST" class="border-t border-gray-100 pt-8">
+                @csrf
+                <input type="hidden" name="product_id" value="1">
+                
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <!-- Input Jumlah -->
+                    <div class="w-full sm:w-32">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Jumlah</label>
+                        <input type="number" name="qty" value="1" min="1" max="12" 
+                               class="w-full border border-gray-300 rounded-lg px-4 py-3 text-center focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-200 transition">
+                    </div>
+                    
+                    <!-- Tombol Beli -->
+                    <div class="flex-grow flex flex-col justify-end">
+                        <button type="submit" class="w-full bg-brand-600 text-white font-semibold py-3.5 rounded-lg hover:bg-brand-700 transition duration-300 shadow-md hover:shadow-lg flex justify-center items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                            </svg>
+                            Tambah ke Keranjang
+                        </button>
+                    </div>
                 </div>
-            </div>
+            </form>
 
-            {{-- Tombol aksi --}}
-            <div class="mt-8 flex gap-3">
-                <button type="button"
-                        class="w-12 h-12 flex items-center justify-center rounded-lg border
-                               border-brand-600 text-brand-600 hover:bg-brand-50 text-xl">
-                    ♡
-                </button>
-                <button type="button"
-                        class="flex-1 h-12 rounded-lg bg-brand-600 hover:bg-brand-700
-                               text-white font-semibold text-sm">
-                    Tambah ke Keranjang
-                </button>
-                <a href="#"
-                   class="flex-1 h-12 flex items-center justify-center rounded-lg bg-brand-700
-                          hover:bg-brand-600 text-white font-semibold text-sm">
-                    Beli Sekarang
-                </a>
-            </div>
         </div>
     </div>
 </div>
-
-{{-- Tombol jumlah (+ / −) --}}
-<script>
-    (function () {
-        var qty = document.getElementById('qty');
-        document.getElementById('qty-minus').addEventListener('click', function () {
-            var v = parseInt(qty.value, 10);
-            if (v > 1) { qty.value = v - 1; }
-        });
-        document.getElementById('qty-plus').addEventListener('click', function () {
-            qty.value = parseInt(qty.value, 10) + 1;
-        });
-    })();
-</script>
 @endsection

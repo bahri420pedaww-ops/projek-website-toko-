@@ -12,7 +12,7 @@
         </nav>
 
         <div class="flex items-center gap-4 text-sm">
-            <a href="#" class="relative hover:text-brand-600">
+            <a href="/preview/keranjang" class="relative hover:text-brand-600">
                 Keranjang
                 <span class="absolute -top-2 -right-4 bg-brand-600 text-white text-xs
                              w-5 h-5 rounded-full flex items-center justify-center">2</span>
