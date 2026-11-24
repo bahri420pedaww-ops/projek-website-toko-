@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Shop\CartController;
 use App\Http\Controllers\Shop\CheckoutController;
+use App\Http\Controllers\Shop\OrderActionController;
 use App\Http\Controllers\Shop\OrderController;
 use App\Http\Controllers\Shop\ProductController;
 use Illuminate\Support\Facades\Route;
@@ -32,4 +33,8 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/pesanan', [OrderController::class, 'index'])->name('orders.index');
     Route::get('/pesanan/{orderCode}', [OrderController::class, 'show'])->name('orders.show');
+
+    // Aksi pembeli pada pesanannya sendiri
+    Route::post('/pesanan/{orderCode}/batal', [OrderActionController::class, 'cancel'])->name('orders.cancel');
+    Route::post('/pesanan/{orderCode}/diterima', [OrderActionController::class, 'receive'])->name('orders.receive');
 });

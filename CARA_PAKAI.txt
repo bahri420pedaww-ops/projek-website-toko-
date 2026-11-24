@@ -1,110 +1,65 @@
-PAKET PAYMENT GATEWAY MIDTRANS (Snap, sandbox)
+PAKET PESANAN UNTUK ADMIN (daftar, detail, ubah status, resi, pembatalan)
 
-Tidak ada paket Composer baru yang perlu dipasang (memakai HTTP client bawaan Laravel).
-Tidak ada migration baru (tabel payments sudah ada sejak paket database).
+Alur status:  pending -> paid -> processing -> shipped -> completed
+              pending -> cancelled (stok dikembalikan; pesanan yang sudah dibayar tidak bisa dibatalkan)
 
-A. SIAPKAN AKUN MIDTRANS SANDBOX
-   1. Daftar di https://dashboard.sandbox.midtrans.com (gratis), buat merchant uji.
-   2. Pastikan lingkungan di dashboard = SANDBOX.
-   3. Buka Settings -> Access Keys. Salin Server Key (SB-Mid-server-...) dan
-      Client Key (SB-Mid-client-...). Server Key rahasia: jangan dikirim ke siapa pun,
-      jangan di-commit.
+Prasyarat: paket checkout, ongkir, dan midtrans sudah terpasang dan lolos tes.
 
-B. PASANG PAKET
-   1. Pastikan ongkir sebelumnya sudah di-commit (git status = "working tree clean").
-   2. Ekstrak zip ke folder projek (C:\laragon\www\Website-Penjualan-Toko).
-      Windows akan bertanya "Replace or Skip" untuk 2 file ini. Pilih REPLACE:
-          app\Http\Controllers\Shop\OrderController.php
-          resources\views\shop\orders\show.blade.php
-      Keduanya buatan paket sebelumnya (hanya DITAMBAH: pengecekan status dan blok
-      pembayaran). Kalau teman sudah mengubah view detail pesanan, JANGAN timpa; kabari saya.
-      File lain semuanya baru.
-   3. Buka routes/web.php, tambahkan SATU baris ini di dekat require account.php:
-          require __DIR__.'/payment.php';
-   4. Buka file .env, tambahkan (isi dengan kunci milikmu):
-          MIDTRANS_SERVER_KEY=SB-Mid-server-xxxxxxxxxxxx
-          MIDTRANS_CLIENT_KEY=SB-Mid-client-xxxxxxxxxxxx
-          MIDTRANS_IS_PRODUCTION=false
-          MIDTRANS_EXPIRY_HOURS=24
-          MIDTRANS_VERIFY_SSL=true
-   5. Terminal Laragon (folder projek):
-          php artisan optimize:clear
-          php artisan route:list --name=payments
-      Harus muncul payments.show, payments.check, payments.notification.
+1. Pastikan pekerjaan sebelumnya sudah di-commit (git status = "working tree clean").
 
-C. TES (npm run dev berjalan; komputer ONLINE)
-   1. Login pembeli, buat satu pesanan lewat checkout. Di detail pesanan (status
-      "Menunggu pembayaran") klik "Bayar sekarang".
-   2. Halaman pembayaran terbuka dan popup Midtrans muncul. Pilih satu metode lalu bayar di
-      simulator sandbox:
-        - Kartu kredit: nomor uji 4811 1111 1111 1114, CVV 123, tanggal kedaluwarsa bebas
-          (masa depan), OTP 112. Kalau ditolak, lihat daftar kartu uji di dokumentasi Midtrans.
-        - Transfer bank / QRIS / e-wallet: Midtrans menyediakan simulator pembayaran sandbox
-          di https://simulator.sandbox.midtrans.com (tempel nomor VA atau kode QR dari popup).
-   3. Setelah popup menyatakan sukses, kamu dikembalikan ke detail pesanan dengan status
-      "Sudah dibayar" dan pesan hijau. (Ini berjalan tanpa webhook, lewat pengecekan status.)
-   4. Cek HeidiSQL:
-        - payments: 1 baris, status settlement, transaction_id, payment_type, paid_at terisi
-        - orders: status paid
-        - order_status_histories: ada baris paid
-   5. Buka /pesanan/{kode}/bayar berkali-kali untuk pesanan yang masih pending -> tabel
-      payments tetap 1 baris (token dipakai ulang, tidak membuat transaksi ganda).
-   6. Tutup popup tanpa membayar -> pesanan tetap pending. Klik "Cek status pembayaran" ->
-      muncul pesan "Pembayaran belum diterima".
-   7. UJI WEBHOOK TANPA INTERNET (simulasi notifikasi dengan signature benar):
-          php artisan payments:simulate INV-XXXXXXXX-XXXXXX settlement
-      -> pesanan paid. Ulangi perintah yang sama -> tidak ada perubahan ganda.
-      Lalu:  php artisan payments:simulate INV-XXXXXXXX-XXXXXX pending
-      -> pesanan TETAP paid (notifikasi terlambat tidak menurunkan status).
-      (Ganti INV-... dengan gateway_order_id di tabel payments. Buka halaman bayar sebuah
-      pesanan dulu agar barisnya ada.)
-   8. UJI KEDALUWARSA: buat pesanan baru, buka halaman bayar-nya, lalu:
-          php artisan payments:simulate INV-YYYYYYYY-YYYYYY expire
-      -> pesanan cancelled, stok produk KEMBALI bertambah, riwayat status tercatat.
-   9. UJI PEMBATALAN OTOMATIS: ubah kolom created_at sebuah pesanan pending (tanpa
-      pembayaran) di HeidiSQL menjadi 2 hari lalu, lalu:
-          php artisan orders:expire-unpaid
-      -> pesanan cancelled dan stok kembali. Pesanan yang baru dibuat tidak tersentuh.
-  10. UJI KEAMANAN: kirim notifikasi dengan signature palsu. Di Git Bash:
-          curl -i -X POST http://website-penjualan-toko.test/midtrans/notification \
-            -H "Content-Type: application/json" \
-            -d '{"order_id":"x","status_code":"200","gross_amount":"1.00","signature_key":"palsu"}'
-      -> harus 403. Notifikasi tanpa signature yang benar tidak pernah mengubah apa pun.
-  11. Login sebagai pembeli lain, buka /pesanan/{kode pesanan orang lain}/bayar -> 404.
+2. Ekstrak zip ke folder projek (C:\laragon\www\Website-Penjualan-Toko).
+   Windows akan bertanya "Replace or Skip". Pilih REPLACE untuk semua yang ditanyakan:
+       app\Services\MidtransClient.php
+       app\Services\OrderService.php
+       app\Http\Controllers\Admin\CustomerController.php
+       routes\admin.php
+       routes\shop.php
+       resources\views\admin\dashboard.blade.php
+       resources\views\admin\customers\show.blade.php
+       resources\views\shop\orders\show.blade.php
+   Semuanya buatan paket sebelumnya; isinya hanya DITAMBAH (tidak ada yang hilang).
+   MidtransClient tetap menyertakan fitur ngrok, jadi aman walau paket ngrok belum dipasang.
+   Kalau teman sudah mengubah view pembeli (orders\show), JANGAN timpa view itu; kabari saya.
+   File baru: OrderManagementService, OrderShipped, DashboardController, OrderController
+   (admin), OrderActionController (pembeli), dan view admin\orders.
+   Tidak ada migration baru. Tidak perlu mengedit routes/web.php.
 
-D. WEBHOOK ASLI (OPSIONAL)
-   Server Midtrans tidak bisa menjangkau "website-penjualan-toko.test" karena alamat itu hanya
-   ada di komputermu. Untuk menerima notifikasi asli, buka terowongan (tunnel) gratis seperti
-   ngrok atau Cloudflare Tunnel ke situs lokalmu, lalu di dashboard sandbox:
-       Settings -> Configuration -> Payment Notification URL
-       isi:  https://ALAMAT-TUNNEL-KAMU/midtrans/notification
-   Tanpa tunnel pun semuanya tetap bisa didemokan lewat popup (otomatis cek status) dan
-   tombol "Cek status pembayaran".
+3. Terminal Laragon (folder projek):
+       php artisan optimize:clear
+       php artisan route:list --name=orders
+   Harus muncul admin.orders.index, admin.orders.show, admin.orders.process, admin.orders.ship,
+   admin.orders.complete, admin.orders.cancel, orders.cancel, orders.receive, dan route lama.
 
-E. PEMBATALAN OTOMATIS TERJADWAL (OPSIONAL)
-   Untuk menjalankan orders:expire-unpaid otomatis, tambahkan di method schedule()
-   pada app/Console/Kernel.php:
-          $schedule->command('orders:expire-unpaid')->hourly();
-   lalu biarkan terminal berikut berjalan saat demo:
-          php artisan schedule:work
+4. Tes. Siapkan beberapa pesanan lewat akun pembeli. Untuk membuat pesanan "sudah dibayar"
+   tanpa menunggu simulator, gunakan:
+       php artisan payments:simulate INV-XXXXXXXX-XXXXXX settlement
+   (buka halaman bayar pesanannya dulu agar baris pembayaran ada).
 
-F. PEMECAHAN MASALAH
-   - "MIDTRANS_SERVER_KEY belum diatur": isi .env lalu jalankan php artisan config:clear.
-   - "Server Key Midtrans tidak valid (401)": kunci salah salin, atau memakai kunci
-     production padahal MIDTRANS_IS_PRODUCTION=false (harus sama-sama sandbox).
-   - "cURL error 60" / sertifikat SSL: PHP di Windows belum punya daftar sertifikat (CA).
-     Solusi benar: unduh https://curl.se/ca/cacert.pem, simpan misalnya di
-     C:\laragon\etc\ssl\cacert.pem, lalu di php.ini (Laragon: Menu -> PHP -> php.ini)
-     isi curl.cainfo="C:\laragon\etc\ssl\cacert.pem" dan openssl.cafile dengan alamat yang
-     sama, lalu restart Apache. Hanya untuk debugging lokal sementara, boleh set
-     MIDTRANS_VERIFY_SSL=false di .env (jangan dipakai selain di komputermu).
-   - Popup tidak muncul: pastikan MIDTRANS_CLIENT_KEY terisi dan komputer online
-     (Snap.js diunduh dari server Midtrans). Buka Console browser (F12) untuk melihat pesan.
-   - "Gross amount tidak sama dengan jumlah item" dari Midtrans: kabari saya beserta
-     pesan lengkapnya.
+   a. /admin -> ada kartu hitungan (perlu diproses, perlu dikirim, sedang dikirim, menunggu
+      pembayaran) dan tautan "Kelola Pesanan".
+   b. /admin/orders -> daftar pesanan. Tab status menampilkan jumlah per status, kolom pencarian
+      bekerja (kode, nama penerima, nama atau email pembeli).
+   c. Pesanan "Menunggu pembayaran" -> detail -> "Batalkan pesanan":
+        - status cancelled, stok produk KEMBALI, riwayat tercatat "Dibatalkan oleh admin."
+        - baris payments yang pending menjadi cancel
+        - (opsional) di dashboard Midtrans sandbox, transaksi itu ikut dibatalkan
+   d. Pesanan "Sudah dibayar" -> "Proses pesanan" -> status "Diproses".
+   e. Pesanan "Diproses": klik "Kirim pesanan" dengan resi KOSONG -> ditolak (pesan wajib diisi).
+      Isi resi lalu kirim -> status "Dikirim"; baris shipments terisi (tracking_number, shipped_at).
+   f. Login sebagai pembeli, buka pesanan itu -> tampil status Dikirim dan nomor resi, serta
+      tombol "Pesanan sudah diterima". Klik -> status "Selesai"; shipments.delivered_at terisi.
+   g. Buka dua tab untuk pesanan "Sudah dibayar", klik "Proses pesanan" di tab pertama lalu di
+      tab kedua -> tab kedua menampilkan pesan error, riwayat tidak dobel.
+   h. Pembeli dengan pesanan "Menunggu pembayaran" -> klik "Batalkan pesanan" -> dibatalkan,
+      stok kembali. Pesanan yang sudah dibayar tidak punya tombol batal.
+   i. Login sebagai pembeli, buka /admin/orders -> harus 403.
+   j. Akun pembeli lain membuka /pesanan/{kode pesanan orang lain} -> 404.
+   k. /admin/customers/{id pembeli} -> ada daftar pesanan terakhir dan total belanja
+      (hanya pesanan yang sudah dibayar sampai selesai).
 
-G. COMMIT DAN PUSH
+5. Commit dan push:
        git add .
-       git commit -m "Integrasi pembayaran Midtrans (Snap, sandbox)"
+       git commit -m "Pesanan untuk admin: daftar, status, resi, pembatalan"
        git push
-   Pastikan git status TIDAK menampilkan file .env. Kirim docs/KONTRAK_PEMBAYARAN.md ke teman.
+
+6. Kirim docs/KONTRAK_PESANAN.md ke teman (frontend).

@@ -1,4 +1,5 @@
-{{-- PLACEHOLDER (backend). Variabel: $customer (User), $addresses (koleksi, alamat utama paling atas).
+{{-- PLACEHOLDER (backend). Variabel: $customer (User), $addresses (koleksi, alamat utama paling atas),
+     $orders (10 pesanan terakhir), $totalSpent (total pesanan yang sudah dibayar, rupiah).
      Tiap alamat: label, receiver_name, receiver_phone, full_address, map_url (atau null), is_default --}}
 <x-app-layout>
     <x-slot name="header">
@@ -32,7 +33,49 @@
                         <dt class="text-gray-500">Terdaftar</dt>
                         <dd class="font-medium">{{ $customer->created_at?->format('d M Y H:i') }}</dd>
                     </div>
+                    <div>
+                        <dt class="text-gray-500">Total belanja (sudah dibayar)</dt>
+                        <dd class="font-medium">Rp {{ number_format($totalSpent, 0, ',', '.') }}</dd>
+                    </div>
                 </dl>
+            </div>
+
+            <div class="bg-white p-6 shadow-sm sm:rounded-lg">
+                <h3 class="font-semibold text-gray-800 mb-3">Pesanan Terakhir</h3>
+
+                @if ($orders->isEmpty())
+                    <p class="text-sm text-gray-500">Pelanggan ini belum pernah memesan.</p>
+                @else
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200 text-sm">
+                            <thead class="text-left text-gray-600">
+                                <tr>
+                                    <th class="py-2 pr-4">Kode</th>
+                                    <th class="py-2 pr-4">Tanggal</th>
+                                    <th class="py-2 pr-4">Total</th>
+                                    <th class="py-2 pr-4">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100">
+                                @foreach ($orders as $order)
+                                    <tr>
+                                        <td class="py-2 pr-4">
+                                            <a href="{{ route('admin.orders.show', $order) }}"
+                                               class="text-indigo-600 hover:underline">{{ $order->order_code }}</a>
+                                        </td>
+                                        <td class="py-2 pr-4">{{ $order->created_at->format('d M Y H:i') }}</td>
+                                        <td class="py-2 pr-4">Rp {{ number_format($order->grand_total, 0, ',', '.') }}</td>
+                                        <td class="py-2 pr-4">
+                                            <span class="px-2 py-0.5 rounded text-xs font-semibold {{ \App\Support\OrderStatus::badge($order->status) }}">
+                                                {{ \App\Support\OrderStatus::label($order->status) }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                @endif
             </div>
 
             <div class="bg-white p-6 shadow-sm sm:rounded-lg">

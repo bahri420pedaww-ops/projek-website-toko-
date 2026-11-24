@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\CustomerController;
+use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\ProductImageController;
 use App\Http\Controllers\Admin\ShippingMethodController;
@@ -13,7 +15,7 @@ use Illuminate\Support\Facades\Route;
 */
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
 
-    Route::get('/', fn () => view('admin.dashboard'))->name('dashboard');
+    Route::get('/', DashboardController::class)->name('dashboard');
 
     Route::resource('categories', CategoryController::class)->except('show');
     Route::resource('products', ProductController::class)->except('show');
@@ -26,8 +28,15 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     // Pelanggan dan alamatnya (hanya lihat)
     Route::resource('customers', CustomerController::class)->only(['index', 'show']);
 
-    // Layanan kurir dan tarif ongkir per zona
+    // Layanan kurir dan tarif ongkir
     Route::resource('shipping-methods', ShippingMethodController::class)
         ->parameters(['shipping-methods' => 'method'])
         ->except(['show', 'destroy']);
+
+    // Pesanan: lihat dan ubah status
+    Route::resource('orders', OrderController::class)->only(['index', 'show']);
+    Route::post('orders/{order}/process', [OrderController::class, 'process'])->name('orders.process');
+    Route::post('orders/{order}/ship', [OrderController::class, 'ship'])->name('orders.ship');
+    Route::post('orders/{order}/complete', [OrderController::class, 'complete'])->name('orders.complete');
+    Route::post('orders/{order}/cancel', [OrderController::class, 'cancel'])->name('orders.cancel');
 });

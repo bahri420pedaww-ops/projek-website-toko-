@@ -5,7 +5,8 @@
      items: product_name, price, quantity, subtotal (dihitung)
      histories: status, note, created_at
      payments: gateway_order_id, status, payment_type, paid_at, created_at
-     shipment: tracking_number, shipped_at, delivered_at (bisa null) --}}
+     shipment: tracking_number, shipped_at, delivered_at (bisa null)
+     Aksi pembeli (POST, @csrf): orders.cancel (status pending) | orders.receive (status shipped) --}}
 @extends('shop.layout')
 
 @section('title', 'Pesanan ' . $order->order_code)
@@ -66,7 +67,11 @@
                     <p class="text-gray-600">Berat: {{ number_format($order->total_weight_gram, 0, ',', '.') }} gram</p>
                 @endif
                 @if ($order->shipment?->tracking_number)
-                    <p class="text-gray-600">No. resi: <span class="font-medium">{{ $order->shipment->tracking_number }}</span></p>
+                    <p class="text-gray-600">No. resi: <span class="font-medium">{{ $order->shipment->tracking_number }}</span>
+                        @if ($order->shipment->shipped_at)
+                            <span class="text-xs text-gray-400">(dikirim {{ $order->shipment->shipped_at->format('d M Y') }})</span>
+                        @endif
+                    </p>
                 @endif
                 @if ($order->note)
                     <p class="mt-2 text-gray-600">Catatan: {{ $order->note }}</p>
@@ -117,7 +122,7 @@
             </section>
         </div>
 
-        {{-- Ringkasan biaya dan pembayaran --}}
+        {{-- Ringkasan biaya dan aksi --}}
         <aside>
             <div class="bg-white p-6 rounded-lg shadow-sm space-y-2 text-sm">
                 <h2 class="font-semibold mb-1">Rincian Biaya</h2>
@@ -150,6 +155,22 @@
                         @csrf
                         <button class="mt-2 w-full px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-50">
                             Cek status pembayaran
+                        </button>
+                    </form>
+
+                    <form method="POST" action="{{ route('orders.cancel', $order->order_code) }}"
+                          onsubmit="return confirm('Batalkan pesanan ini?')">
+                        @csrf
+                        <button class="mt-2 w-full px-4 py-2 text-red-700 text-sm font-medium rounded-md hover:bg-red-50">
+                            Batalkan pesanan
+                        </button>
+                    </form>
+                @elseif ($order->status === 'shipped')
+                    <form method="POST" action="{{ route('orders.receive', $order->order_code) }}"
+                          onsubmit="return confirm('Pesanan sudah kamu terima dengan baik?')">
+                        @csrf
+                        <button class="mt-4 w-full px-4 py-3 bg-gray-800 text-white text-sm font-semibold rounded-md hover:bg-gray-700">
+                            Pesanan sudah diterima
                         </button>
                     </form>
                 @endif
