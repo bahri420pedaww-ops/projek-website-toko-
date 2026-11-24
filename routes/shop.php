@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\Shop\CartController;
+use App\Http\Controllers\Shop\CheckoutController;
+use App\Http\Controllers\Shop\OrderController;
 use App\Http\Controllers\Shop\ProductController;
 use Illuminate\Support\Facades\Route;
 
@@ -21,4 +23,13 @@ Route::middleware('auth')->prefix('keranjang')->name('cart.')->group(function ()
     Route::delete('/', [CartController::class, 'clear'])->name('clear');
     Route::patch('/{item}', [CartController::class, 'update'])->whereNumber('item')->name('update');
     Route::delete('/{item}', [CartController::class, 'destroy'])->whereNumber('item')->name('destroy');
+});
+
+// ---- Checkout dan pesanan saya (wajib login) ----
+Route::middleware('auth')->group(function () {
+    Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
+    Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
+
+    Route::get('/pesanan', [OrderController::class, 'index'])->name('orders.index');
+    Route::get('/pesanan/{orderCode}', [OrderController::class, 'show'])->name('orders.show');
 });

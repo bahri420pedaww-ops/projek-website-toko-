@@ -1,0 +1,62 @@
+WEBHOOK MIDTRANS LEWAT NGROK (alamat dideteksi otomatis)
+
+Dengan paket ini, setiap transaksi pembayaran BARU memberi tahu Midtrans untuk mengirim
+notifikasi ke alamat ngrok yang sedang aktif. Kamu TIDAK perlu mengisi Notification URL di
+dashboard Midtrans, dan tidak perlu menyalin alamat ngrok yang berubah-ubah.
+
+A. SEKALI SAJA
+   1. Pasang ngrok dan authtoken (lihat panduan sebelumnya):
+          winget install ngrok -s msstore
+          ngrok config add-authtoken "TOKEN_KAMU"
+   2. Ekstrak zip ini ke folder projek. Pilih REPLACE untuk 2 file:
+          config\midtrans.php
+          app\Services\MidtransClient.php
+      (file paket Midtrans sebelumnya; isinya hanya ditambah). File baru:
+          app\Console\Commands\MidtransWebhookUrl.php
+   3. Tambahkan satu baris di .env:
+          MIDTRANS_NOTIFICATION_URL=ngrok
+   4. Terminal Laragon:
+          php artisan config:clear
+
+B. SETIAP KALI MAU MENGUJI (urutannya penting)
+   Terminal 1 (folder projek):   php artisan serve --port=8000
+   Terminal 2:                   ngrok http 8000
+   Terminal 3 (folder projek):   php artisan midtrans:webhook-url --ping
+
+   Hasil yang benar dari perintah ketiga:
+       Alamat webhook untuk transaksi baru:
+         https://xxxx.ngrok-free.dev/midtrans/notification
+       BERHASIL: alamat sampai ke aplikasi dan notifikasi palsu ditolak (403) ...
+   Kalau muncul "Alamat ngrok tidak ditemukan": ngrok belum jalan.
+   Kalau "Respons tidak terduga": php artisan serve mati atau ngrok mengarah ke port lain.
+
+C. BUKTIKAN BAHWA NOTIFIKASI MENGUBAH STATUS (tanpa tombol cek)
+   Popup yang sukses mengembalikan pembeli ke halaman pesanan dengan ?cek=1, yang memeriksa
+   status sendiri. Supaya yang terbukti adalah WEBHOOK-nya, pakai metode yang tertunda:
+   1. Buat pesanan BARU (penting: alamat webhook hanya dipakai untuk transaksi yang dibuat
+      SETELAH ngrok berjalan dan paket ini terpasang).
+   2. Buka halaman bayar, pilih "Transfer Bank / Virtual Account". Salin nomor VA yang muncul,
+      lalu TUTUP popup. Pesanan tetap "Menunggu pembayaran".
+   3. Buka https://simulator.sandbox.midtrans.com, tempel nomor VA, lalu lakukan pembayaran.
+   4. Buka http://127.0.0.1:4040 (panel ngrok). Akan terlihat POST /midtrans/notification
+      dengan respons 200.
+   5. Muat ulang halaman detail pesanan (tanpa klik apa pun). Status berubah menjadi
+      "Sudah dibayar", dan riwayat status berisi "Pembayaran diterima melalui Midtrans."
+   Itu bukti webhook bekerja.
+
+D. CATATAN
+   - Alamat ngrok gratis bisa berubah tiap ngrok dijalankan ulang. Transaksi BARU otomatis
+     memakai alamat terbaru. Pembayaran lama yang belum selesai tetap memakai alamat saat ia
+     dibuat; untuk itu pakai tombol "Cek status pembayaran" atau buat pesanan baru.
+   - Selama ngrok menyala, seluruh situsmu terbuka untuk umum lewat alamat itu. Matikan ngrok
+     (Ctrl+C) setelah selesai, dan jangan bagikan alamatnya.
+   - Di mode production (MIDTRANS_IS_PRODUCTION=true) pengaturan ini diabaikan.
+   - Kalau notifikasi tidak muncul di panel ngrok: pastikan pesanan dibuat SETELAH langkah B
+     dijalankan, dan alamat pada langkah B nomor 3 tertera. Kalau ada permintaan dengan
+     respons 403 atau 500, lihat storage\logs\laravel.log.
+
+E. COMMIT
+       git add .
+       git commit -m "Webhook Midtrans otomatis lewat ngrok"
+       git push
+   Pastikan git status tidak menampilkan file .env.

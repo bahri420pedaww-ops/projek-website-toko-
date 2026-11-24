@@ -117,13 +117,16 @@
                     <p class="mt-3 text-xs text-red-600">
                         Ada produk bermasalah (stok atau ketersediaan). Perbaiki dulu sebelum checkout.
                     </p>
+                    <button type="button" disabled
+                            class="mt-4 w-full px-4 py-3 bg-gray-300 text-gray-600 text-sm font-semibold rounded-md cursor-not-allowed">
+                        Lanjut ke Checkout
+                    </button>
+                @else
+                    <a href="{{ route('checkout.index') }}"
+                       class="mt-4 block w-full text-center px-4 py-3 bg-gray-800 text-white text-sm font-semibold rounded-md hover:bg-gray-700">
+                        Lanjut ke Checkout
+                    </a>
                 @endif
-
-                {{-- Tombol ini diaktifkan di langkah Checkout --}}
-                <button type="button" disabled
-                        class="mt-4 w-full px-4 py-3 bg-gray-300 text-gray-600 text-sm font-semibold rounded-md cursor-not-allowed">
-                    Lanjut ke Checkout (segera hadir)
-                </button>
             </div>
         </div>
     @endif

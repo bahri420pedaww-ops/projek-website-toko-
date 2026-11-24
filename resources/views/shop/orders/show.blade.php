@@ -1,9 +1,10 @@
-{{-- PLACEHOLDER (backend). Variabel: $order dengan relasi items, histories, shippingMethod, shipment.
+{{-- PLACEHOLDER (backend). Variabel: $order dengan relasi items, histories, shippingMethod, shipment, payments.
      order: order_code, status, created_at, receiver_name, receiver_phone, shipping_address,
             city_name, province_name, postal_code, total_weight_gram, subtotal, shipping_cost,
             shipping_etd (bisa null), discount_total, grand_total, note
      items: product_name, price, quantity, subtotal (dihitung)
      histories: status, note, created_at
+     payments: gateway_order_id, status, payment_type, paid_at, created_at
      shipment: tracking_number, shipped_at, delivered_at (bisa null) --}}
 @extends('shop.layout')
 
@@ -72,6 +73,33 @@
                 @endif
             </section>
 
+            {{-- Pembayaran --}}
+            @if ($order->payments->isNotEmpty())
+                <section class="bg-white p-6 rounded-lg shadow-sm text-sm">
+                    <h2 class="font-semibold mb-3">Pembayaran</h2>
+                    <ul class="space-y-3">
+                        @foreach ($order->payments->sortByDesc('id') as $payment)
+                            <li class="flex flex-wrap items-center justify-between gap-2">
+                                <div>
+                                    <p class="font-medium">{{ $payment->gateway_order_id }}</p>
+                                    <p class="text-xs text-gray-500">
+                                        @if ($payment->payment_type)
+                                            {{ str_replace('_', ' ', $payment->payment_type) }} &middot;
+                                        @endif
+                                        {{ $payment->paid_at
+                                            ? 'Dibayar ' . $payment->paid_at->format('d M Y H:i')
+                                            : 'Dibuat ' . $payment->created_at->format('d M Y H:i') }}
+                                    </p>
+                                </div>
+                                <span class="px-2 py-0.5 rounded text-xs font-semibold {{ \App\Support\PaymentStatus::badge($payment->status) }}">
+                                    {{ \App\Support\PaymentStatus::label($payment->status) }}
+                                </span>
+                            </li>
+                        @endforeach
+                    </ul>
+                </section>
+            @endif
+
             {{-- Riwayat status --}}
             <section class="bg-white p-6 rounded-lg shadow-sm">
                 <h2 class="font-semibold mb-3">Riwayat Status</h2>
@@ -113,11 +141,17 @@
                 </div>
 
                 @if ($order->status === 'pending')
-                    {{-- Tombol ini diaktifkan di langkah Payment Gateway --}}
-                    <button type="button" disabled
-                            class="mt-4 w-full px-4 py-3 bg-gray-300 text-gray-600 text-sm font-semibold rounded-md cursor-not-allowed">
-                        Bayar sekarang (segera hadir)
-                    </button>
+                    <a href="{{ route('payments.show', $order->order_code) }}"
+                       class="mt-4 block w-full text-center px-4 py-3 bg-gray-800 text-white text-sm font-semibold rounded-md hover:bg-gray-700">
+                        Bayar sekarang
+                    </a>
+
+                    <form method="POST" action="{{ route('payments.check', $order->order_code) }}">
+                        @csrf
+                        <button class="mt-2 w-full px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-50">
+                            Cek status pembayaran
+                        </button>
+                    </form>
                 @endif
             </div>
         </aside>
