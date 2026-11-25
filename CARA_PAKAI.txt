@@ -1,65 +1,93 @@
-PAKET PESANAN UNTUK ADMIN (daftar, detail, ubah status, resi, pembatalan)
+PAKET EMAIL NOTIFIKASI (lewat antrean/queue)
 
-Alur status:  pending -> paid -> processing -> shipped -> completed
-              pending -> cancelled (stok dikembalikan; pesanan yang sudah dibayar tidak bisa dibatalkan)
+Email yang dikirim:
+  Pembeli : pesanan dibuat | pembayaran diterima | pesanan dikirim (dengan nomor resi)
+  Admin   : pesanan baru   | pembayaran diterima (perlu diproses)
 
-Prasyarat: paket checkout, ongkir, dan midtrans sudah terpasang dan lolos tes.
+Semua email masuk antrean, jadi checkout tidak melambat. Kegagalan email TIDAK pernah
+menggagalkan pesanan atau pembayaran (kegagalan dicatat, dan bisa dicoba ulang).
 
-1. Pastikan pekerjaan sebelumnya sudah di-commit (git status = "working tree clean").
+A. PASANG PAKET
+   1. Pastikan pesanan admin sebelumnya sudah di-commit (git status = "working tree clean").
+   2. Ekstrak zip ke folder projek (C:\laragon\www\Website-Penjualan-Toko).
+      Windows akan bertanya "Replace or Skip" untuk 2 file ini. Pilih REPLACE:
+          app\Providers\EventServiceProvider.php
+          app\Http\Controllers\Shop\CheckoutController.php
+      EventServiceProvider hanya DITAMBAH daftar listener (isi bawaan Laravel tetap ada).
+      CheckoutController hanya DITAMBAH satu baris event setelah pesanan dibuat.
+      File lain semuanya baru. Tidak ada migration (tabel jobs dan failed_jobs sudah ada).
 
-2. Ekstrak zip ke folder projek (C:\laragon\www\Website-Penjualan-Toko).
-   Windows akan bertanya "Replace or Skip". Pilih REPLACE untuk semua yang ditanyakan:
-       app\Services\MidtransClient.php
-       app\Services\OrderService.php
-       app\Http\Controllers\Admin\CustomerController.php
-       routes\admin.php
-       routes\shop.php
-       resources\views\admin\dashboard.blade.php
-       resources\views\admin\customers\show.blade.php
-       resources\views\shop\orders\show.blade.php
-   Semuanya buatan paket sebelumnya; isinya hanya DITAMBAH (tidak ada yang hilang).
-   MidtransClient tetap menyertakan fitur ngrok, jadi aman walau paket ngrok belum dipasang.
-   Kalau teman sudah mengubah view pembeli (orders\show), JANGAN timpa view itu; kabari saya.
-   File baru: OrderManagementService, OrderShipped, DashboardController, OrderController
-   (admin), OrderActionController (pembeli), dan view admin\orders.
-   Tidak ada migration baru. Tidak perlu mengedit routes/web.php.
+B. ATUR .env  (jangan di-commit; App Password rahasia)
+       APP_URL=http://website-penjualan-toko.test
+       QUEUE_CONNECTION=database
 
-3. Terminal Laragon (folder projek):
+       MAIL_MAILER=smtp
+       MAIL_HOST=smtp.gmail.com
+       MAIL_PORT=587
+       MAIL_USERNAME=emailtoko@gmail.com
+       MAIL_PASSWORD=app-password-16-huruf-tanpa-spasi
+       MAIL_ENCRYPTION=tls
+       MAIL_FROM_ADDRESS=emailtoko@gmail.com
+       MAIL_FROM_NAME="Nama Tokomu"
+
+       SHOP_NAME="Nama Tokomu"
+       SHOP_ADMIN_EMAIL=emailkamu@gmail.com
+
+   - APP_URL penting: tombol di dalam email memakai alamat ini.
+   - SHOP_ADMIN_EMAIL: tujuan semua email untuk admin. Akun seeder admin@toko.test adalah alamat
+     fiktif, jadi isi dengan emailmu yang nyata supaya email admin benar-benar sampai.
+   - Gmail membutuhkan App Password (Akun Google -> Keamanan -> Verifikasi 2 Langkah aktif ->
+     Sandi aplikasi). Password Gmail biasa ditolak.
+   - Mau mencoba tanpa Gmail dulu? Pakai MAIL_MAILER=log. Email akan ditulis ke
+     storage\logs\laravel.log (bukan dikirim sungguhan).
+
+   Lalu:
+       php artisan config:clear
        php artisan optimize:clear
-       php artisan route:list --name=orders
-   Harus muncul admin.orders.index, admin.orders.show, admin.orders.process, admin.orders.ship,
-   admin.orders.complete, admin.orders.cancel, orders.cancel, orders.receive, dan route lama.
 
-4. Tes. Siapkan beberapa pesanan lewat akun pembeli. Untuk membuat pesanan "sudah dibayar"
-   tanpa menunggu simulator, gunakan:
-       php artisan payments:simulate INV-XXXXXXXX-XXXXXX settlement
-   (buka halaman bayar pesanannya dulu agar baris pembayaran ada).
+C. UJI PENGATURAN EMAIL
+       php artisan shop:test-mail emailkamu@gmail.com
+   Harus muncul "Email uji dikirim" dan email tiba (cek juga folder Spam). Kalau muncul
+   "Gagal mengirim", pesan errornya menunjukkan apa yang salah (misalnya
+   "Username and Password not accepted" = App Password salah atau Verifikasi 2 Langkah belum aktif).
 
-   a. /admin -> ada kartu hitungan (perlu diproses, perlu dikirim, sedang dikirim, menunggu
-      pembayaran) dan tautan "Kelola Pesanan".
-   b. /admin/orders -> daftar pesanan. Tab status menampilkan jumlah per status, kolom pencarian
-      bekerja (kode, nama penerima, nama atau email pembeli).
-   c. Pesanan "Menunggu pembayaran" -> detail -> "Batalkan pesanan":
-        - status cancelled, stok produk KEMBALI, riwayat tercatat "Dibatalkan oleh admin."
-        - baris payments yang pending menjadi cancel
-        - (opsional) di dashboard Midtrans sandbox, transaksi itu ikut dibatalkan
-   d. Pesanan "Sudah dibayar" -> "Proses pesanan" -> status "Diproses".
-   e. Pesanan "Diproses": klik "Kirim pesanan" dengan resi KOSONG -> ditolak (pesan wajib diisi).
-      Isi resi lalu kirim -> status "Dikirim"; baris shipments terisi (tracking_number, shipped_at).
-   f. Login sebagai pembeli, buka pesanan itu -> tampil status Dikirim dan nomor resi, serta
-      tombol "Pesanan sudah diterima". Klik -> status "Selesai"; shipments.delivered_at terisi.
-   g. Buka dua tab untuk pesanan "Sudah dibayar", klik "Proses pesanan" di tab pertama lalu di
-      tab kedua -> tab kedua menampilkan pesan error, riwayat tidak dobel.
-   h. Pembeli dengan pesanan "Menunggu pembayaran" -> klik "Batalkan pesanan" -> dibatalkan,
-      stok kembali. Pesanan yang sudah dibayar tidak punya tombol batal.
-   i. Login sebagai pembeli, buka /admin/orders -> harus 403.
-   j. Akun pembeli lain membuka /pesanan/{kode pesanan orang lain} -> 404.
-   k. /admin/customers/{id pembeli} -> ada daftar pesanan terakhir dan total belanja
-      (hanya pesanan yang sudah dibayar sampai selesai).
+D. JALANKAN PEKERJA ANTREAN
+   Karena QUEUE_CONNECTION=database, email diproses oleh "worker". Di terminal terpisah,
+   biarkan terbuka selama pengujian:
+       php artisan queue:work
+   Setelah mengubah .env atau kode, hentikan worker (Ctrl+C) lalu jalankan lagi.
+   (Mau coba tanpa worker? Set QUEUE_CONNECTION=sync; email dikirim langsung saat itu juga,
+   tetapi checkout menunggu pengiriman email selesai.)
 
-5. Commit dan push:
+E. TES ALUR LENGKAP
+   Email pembeli tujuan harus alamat NYATA. Daftar akun baru di /register dengan emailmu,
+   atau pakai trik Gmail: emailkamu+pembeli1@gmail.com tetap masuk ke kotak masukmu.
+   (Akun seeder pembeli@toko.test adalah alamat fiktif.)
+
+   1. Checkout satu pesanan sebagai pembeli.
+      -> Pembeli: "Pesanan ... berhasil dibuat".  Admin (SHOP_ADMIN_EMAIL): "Pesanan baru ...".
+   2. Bayar pesanan (popup Midtrans, atau: php artisan payments:simulate INV-... settlement).
+      -> Pembeli: "Pembayaran pesanan ... diterima".  Admin: "Pembayaran diterima: ...".
+   3. Sebagai admin: Proses pesanan, lalu Kirim pesanan dengan nomor resi.
+      -> Pembeli: "Pesananmu ... sedang dikirim" berisi kurir dan nomor resi.
+   4. Klik tombol di dalam email -> terbuka halaman pesanan yang benar.
+   5. Ulangi payments:simulate ... settlement untuk pesanan yang sama -> email "dibayar" TIDAK
+      terkirim dua kali.
+   6. Matikan worker (Ctrl+C), buat pesanan -> checkout tetap cepat dan sukses. Cek tabel "jobs"
+      di HeidiSQL: ada baris menunggu. Nyalakan worker lagi -> email terkirim, baris hilang.
+   7. Sengaja salahkan MAIL_PASSWORD, jalankan config:clear dan restart worker, buat pesanan:
+      checkout TETAP sukses. Setelah 3 kali percobaan, pekerjaan masuk tabel "failed_jobs".
+      Lihat dengan: php artisan queue:failed
+      Perbaiki .env, restart worker, lalu ulangi pengiriman: php artisan queue:retry all
+
+F. PEMECAHAN MASALAH
+   - Email tidak datang tetapi tidak ada error: worker belum jalan, atau tabel "jobs" menumpuk.
+     Jalankan php artisan queue:work, dan cek folder Spam.
+   - Tombol email menuju alamat salah: perbaiki APP_URL lalu restart worker.
+   - Setelah mengubah .env, selalu php artisan config:clear dan restart worker.
+
+G. COMMIT DAN PUSH
        git add .
-       git commit -m "Pesanan untuk admin: daftar, status, resi, pembatalan"
+       git commit -m "Email notifikasi pesanan lewat antrean"
        git push
-
-6. Kirim docs/KONTRAK_PESANAN.md ke teman (frontend).
+   Pastikan git status TIDAK menampilkan file .env.

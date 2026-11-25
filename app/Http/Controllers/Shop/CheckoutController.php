@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Shop;
 
+use App\Events\OrderPlaced;
 use App\Http\Controllers\Controller;
 use App\Models\ShippingMethod;
 use App\Services\CartService;
@@ -104,6 +105,10 @@ class CheckoutController extends Controller
         } catch (DomainException $e) {
             return redirect()->route('checkout.index')->with('error', $e->getMessage());
         }
+
+        // Dipicu SETELAH pesanan tersimpan; email dikirim lewat listener (kegagalan email
+        // tidak mempengaruhi pesanan).
+        event(new OrderPlaced($order));
 
         return redirect()->route('orders.show', $order->order_code)
             ->with('success', 'Pesanan berhasil dibuat. Silakan lakukan pembayaran.');
