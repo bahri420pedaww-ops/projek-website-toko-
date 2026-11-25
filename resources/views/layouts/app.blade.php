@@ -15,6 +15,12 @@
     @include('partials.navbar')
 
     <main>
+        @if (session('success'))
+            <div class="max-w-6xl mx-auto px-4 pt-4"><p class="rounded-lg bg-green-50 p-3 text-green-700">{{ session('success') }}</p></div>
+        @endif
+        @if (session('error'))
+            <div class="max-w-6xl mx-auto px-4 pt-4"><p class="rounded-lg bg-red-50 p-3 text-red-700">{{ session('error') }}</p></div>
+        @endif
         @yield('content')
     </main>
 

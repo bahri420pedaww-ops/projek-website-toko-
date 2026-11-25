@@ -1,95 +1,62 @@
 @extends('layouts.app')
 @section('title', 'Katalog - StyleShop')
 
-@php
-    // DATA CONTOH sementara. Nanti diganti data dari controller.
-    $categories = ['Semua', 'Kaos', 'Kemeja', 'Hoodie', 'Dress', 'Jaket', 'Celana', 'Rok', 'Aksesoris'];
-    $activeCategory = 'Semua';
-
-    $products = [
-        ['name' => 'Kaos Polos',        'price' => 99000,  'rating' => 4.8],
-        ['name' => 'Hoodie Oversize',   'price' => 149000, 'rating' => 4.8],
-        ['name' => 'Jaket Denim',       'price' => 199000, 'rating' => 4.7],
-        ['name' => 'Dress Wanita',      'price' => 179000, 'rating' => 4.8],
-        ['name' => 'Kemeja Flanel',     'price' => 129000, 'rating' => 4.6],
-        ['name' => 'Celana Chino',      'price' => 159000, 'rating' => 4.7],
-        ['name' => 'Rok Plisket',       'price' => 119000, 'rating' => 4.5],
-        ['name' => 'Topi Baseball',     'price' => 59000,  'rating' => 4.9],
-    ];
-@endphp
-
 @section('content')
-
-{{-- Banner --}}
 <section class="bg-brand-50">
-    <div class="max-w-6xl mx-auto px-4 py-10 md:py-14">
-        <h1 class="text-3xl md:text-4xl font-bold leading-tight">
-            Koleksi Fashion<br>Terbaik
-        </h1>
-        <p class="mt-2 text-gray-600">Untuk Gaya Hidup Modern</p>
-        <div class="mt-4 w-12 h-1 rounded bg-brand-600"></div>
+    <div class="max-w-6xl mx-auto px-4 py-10">
+        <h1 class="text-3xl font-bold">Koleksi Fashion Terbaik</h1>
+        <p class="mt-2 text-gray-600">Temukan produk favoritmu.</p>
     </div>
 </section>
 
 <div class="max-w-6xl mx-auto px-4 py-8 md:flex md:gap-8">
-
-    {{-- Kategori: daftar di kiri pada layar lebar, deret geser pada layar kecil --}}
-    <aside class="md:w-52 md:flex-shrink-0 mb-6 md:mb-0">
+    <aside class="md:w-52 mb-6 md:mb-0">
         <h2 class="font-bold text-lg mb-3">Kategori</h2>
-        <ul class="flex md:flex-col gap-2 overflow-x-auto md:overflow-visible pb-2 md:pb-0">
+        <ul class="flex md:flex-col gap-2 overflow-x-auto">
+            <li><a href="{{ route('products.index') }}" class="block px-4 py-2 rounded-lg {{ !$activeCategory ? 'bg-brand-600 text-white' : 'bg-white' }}">Semua</a></li>
             @foreach ($categories as $category)
-                <li class="flex-shrink-0">
-                    <a href="#"
-                       class="block px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap
-                              {{ $category === $activeCategory
-                                    ? 'bg-brand-600 text-white'
-                                    : 'bg-white text-gray-700 hover:bg-brand-50' }}">
-                        {{ $category }}
-                    </a>
-                </li>
+                <li><a href="{{ route('products.index', ['category' => $category->slug, 'sort' => $activeSort]) }}" class="block px-4 py-2 rounded-lg whitespace-nowrap {{ $activeCategory === $category->slug ? 'bg-brand-600 text-white' : 'bg-white' }}">{{ $category->name }}</a></li>
             @endforeach
         </ul>
     </aside>
 
-    {{-- Daftar produk --}}
     <section class="flex-1">
         <div class="flex items-center justify-between mb-4">
-            <p class="text-sm text-gray-500">{{ count($products) }} produk</p>
-            <label class="text-sm flex items-center gap-2">
-                Urutkan:
-                <select class="border rounded-lg px-3 py-1.5 bg-white text-sm">
-                    <option>Terpopuler</option>
-                    <option>Terbaru</option>
-                    <option>Harga Terendah</option>
-                    <option>Harga Tertinggi</option>
+            <p class="text-sm text-gray-500">{{ $products->total() }} produk</p>
+            <form method="GET" action="{{ route('products.index') }}" class="text-sm flex items-center gap-2">
+                @if ($activeCategory)
+                    <input type="hidden" name="category" value="{{ $activeCategory }}">
+                @endif
+                <label for="sort">Urutkan:</label>
+                <select id="sort" name="sort" onchange="this.form.submit()" class="border rounded-lg px-3 py-1.5 bg-white">
+                    <option value="newest" @selected($activeSort === 'newest')>Terbaru</option>
+                    <option value="price_asc" @selected($activeSort === 'price_asc')>Harga Terendah</option>
+                    <option value="price_desc" @selected($activeSort === 'price_desc')>Harga Tertinggi</option>
                 </select>
-            </label>
+            </form>
         </div>
 
         <div class="grid grid-cols-2 lg:grid-cols-3 gap-4">
-            @foreach ($products as $product)
+            @forelse ($products as $product)
                 <div class="bg-white rounded-xl shadow-sm overflow-hidden">
-                    <a href="/preview/produk" class="h-44 bg-gray-200 flex items-center justify-center text-gray-400 text-sm">
-                        foto
+                    <a href="{{ route('products.show', $product->slug) }}" class="h-44 bg-gray-100 flex items-center justify-center">
+                        @if ($product->primaryImage)
+                            <img src="{{ asset('storage/' . $product->primaryImage->path) }}" alt="{{ $product->name }}" class="w-full h-full object-cover">
+                        @else
+                            <span class="text-gray-400 text-sm">Foto produk</span>
+                        @endif
                     </a>
                     <div class="p-3">
-                        <h3 class="font-semibold text-sm">{{ $product['name'] }}</h3>
-                        <p class="text-brand-600 font-bold text-sm mt-1">
-                            Rp {{ number_format($product['price'], 0, ',', '.') }}
-                        </p>
-                        <div class="flex items-center justify-between mt-2">
-                            <span class="text-xs text-yellow-500">★ {{ $product['rating'] }}</span>
-                            <button type="button"
-                                    class="bg-brand-600 hover:bg-brand-700 text-white text-xs
-                                           px-3 py-1.5 rounded-lg">
-                                + Keranjang
-                            </button>
-                        </div>
+                        <h3 class="font-semibold text-sm">{{ $product->name }}</h3>
+                        <p class="text-brand-600 font-bold text-sm mt-1">Rp {{ number_format($product->price, 0, ',', '.') }}</p>
+                        <a href="{{ route('products.show', $product->slug) }}" class="inline-block mt-2 text-xs text-brand-600">Lihat produk</a>
                     </div>
                 </div>
-            @endforeach
+            @empty
+                <p class="text-gray-500">Produk tidak ditemukan.</p>
+            @endforelse
         </div>
+        <div class="mt-6">{{ $products->links() }}</div>
     </section>
 </div>
-
 @endsection

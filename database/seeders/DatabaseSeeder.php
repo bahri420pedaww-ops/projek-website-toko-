@@ -6,7 +6,6 @@ use App\Models\Category;
 use App\Models\Product;
 use App\Models\User;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
@@ -15,13 +14,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             LocationSeeder::class,
             ShippingMethodSeeder::class,
-        ]);
-
-        User::firstOrCreate(['email' => 'admin@toko.test'], [
-            'name'     => 'Admin Toko',
-            'phone'    => '081200000001',
-            'role'     => 'admin',
-            'password' => Hash::make('password'),
+            AdminUserSeeder::class,
         ]);
 
         User::firstOrCreate(['email' => 'pembeli@toko.test'], [
