@@ -56,7 +56,20 @@ class PaymentService
             $attempt = $order->payments()->count() + 1;
             $gatewayOrderId = $attempt === 1 ? $order->order_code : $order->order_code . '-' . $attempt;
 
-            $result = $this->midtrans->createSnapTransaction($this->buildPayload($order, $gatewayOrderId));
+            $payload = $this->buildPayload($order, $gatewayOrderId);
+
+            try {
+                $result = $this->midtrans->createSnapTransaction($payload);
+            } catch (MidtransException $e) {
+                // Cadangan: kalau Midtrans menolak alamat "callbacks.finish", ulangi tanpa itu
+                // (alamat selesai bayar lalu mengikuti pengaturan di dashboard Midtrans).
+                if (! isset($payload['callbacks']) || ! str_contains(strtolower($e->getMessage()), 'callbacks')) {
+                    throw $e;
+                }
+
+                unset($payload['callbacks']);
+                $result = $this->midtrans->createSnapTransaction($payload);
+            }
 
             return $order->payments()->create([
                 'gateway_order_id' => $gatewayOrderId,
@@ -294,6 +307,14 @@ class PaymentService
             'expiry' => [
                 'unit'     => 'hours',
                 'duration' => (int) config('midtrans.expiry_hours'),
+            ],
+
+            // Alamat tujuan setelah pembeli selesai membayar. Tanpa ini, Midtrans memakai
+            // "Finish Redirect URL" di dashboard (bawaan sandbox: example.com), dan itulah yang
+            // terjadi pada metode yang keluar dari popup seperti e-wallet atau halaman 3DS.
+            // Midtrans menambahkan ?order_id=...&status_code=...&transaction_status=... di ujungnya.
+            'callbacks' => [
+                'finish' => route('orders.show', $order->order_code),
             ],
         ];
 

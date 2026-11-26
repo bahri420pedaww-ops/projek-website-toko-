@@ -31,9 +31,13 @@ class OrderController extends Controller
     {
         $order = $this->findOrder($request, $orderCode);
 
-        // Setelah popup pembayaran selesai, pembeli dikembalikan ke sini dengan ?cek=1.
-        // Status ditanyakan langsung ke Midtrans supaya langsung terbarui tanpa menunggu webhook.
-        if ($request->boolean('cek') && $order->status === Order::PENDING) {
+        // Pembeli kembali ke halaman ini setelah membayar, lewat salah satu dari dua jalur:
+        //   - popup Snap yang selesai: ?cek=1
+        //   - dialihkan oleh Midtrans (e-wallet, 3DS, dan sejenisnya): ?order_id=...&transaction_status=...
+        // Parameter dari URL TIDAK dipercaya; ia hanya memicu pengecekan status langsung ke Midtrans.
+        $returnedFromPayment = $request->boolean('cek') || $request->has('transaction_status');
+
+        if ($returnedFromPayment && $order->status === Order::PENDING) {
             try {
                 $this->payments->syncLatest($order);
                 $order = $this->findOrder($request, $orderCode);

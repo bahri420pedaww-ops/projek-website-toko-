@@ -1,93 +1,69 @@
-PAKET EMAIL NOTIFIKASI (lewat antrean/queue)
+PERBAIKAN EMAIL: KOTAK MASUK PENUH EMAIL "ADDRESS NOT FOUND" DAN ISI EMAIL KURANG JELAS
 
-Email yang dikirim:
-  Pembeli : pesanan dibuat | pembayaran diterima | pesanan dikirim (dengan nomor resi)
-  Admin   : pesanan baru   | pembayaran diterima (perlu diproses)
+PENYEBAB (dari screenshot):
+  1. SHOP_ADMIN_EMAIL di .env masih berisi isian contoh "emailkamu@gmail.com". Gmail menjawab
+     "Address not found" untuk email admin.
+  2. Akun pembeli seeder (pembeli@toko.test) memakai alamat fiktif. Email ke sana juga gagal.
+  Setiap email yang gagal terkirim menghasilkan email pantulan (dari "Mail Delivery Subsystem")
+  yang masuk ke kotak masuk akun pengirim. Itulah yang membuat kotak masukmu penuh.
+  3. Tampilan email masih memakai nama bawaan "Laravel" dan "Nama Tokomu" karena APP_NAME dan
+     SHOP_NAME belum diisi.
 
-Semua email masuk antrean, jadi checkout tidak melambat. Kegagalan email TIDAK pernah
-menggagalkan pesanan atau pembayaran (kegagalan dicatat, dan bisa dicoba ulang).
-
-A. PASANG PAKET
-   1. Pastikan pesanan admin sebelumnya sudah di-commit (git status = "working tree clean").
-   2. Ekstrak zip ke folder projek (C:\laragon\www\Website-Penjualan-Toko).
-      Windows akan bertanya "Replace or Skip" untuk 2 file ini. Pilih REPLACE:
-          app\Providers\EventServiceProvider.php
-          app\Http\Controllers\Shop\CheckoutController.php
-      EventServiceProvider hanya DITAMBAH daftar listener (isi bawaan Laravel tetap ada).
-      CheckoutController hanya DITAMBAH satu baris event setelah pesanan dibuat.
-      File lain semuanya baru. Tidak ada migration (tabel jobs dan failed_jobs sudah ada).
-
-B. ATUR .env  (jangan di-commit; App Password rahasia)
-       APP_URL=http://website-penjualan-toko.test
-       QUEUE_CONNECTION=database
-
-       MAIL_MAILER=smtp
-       MAIL_HOST=smtp.gmail.com
-       MAIL_PORT=587
-       MAIL_USERNAME=emailtoko@gmail.com
-       MAIL_PASSWORD=app-password-16-huruf-tanpa-spasi
-       MAIL_ENCRYPTION=tls
-       MAIL_FROM_ADDRESS=emailtoko@gmail.com
-       MAIL_FROM_NAME="Nama Tokomu"
-
-       SHOP_NAME="Nama Tokomu"
-       SHOP_ADMIN_EMAIL=emailkamu@gmail.com
-
-   - APP_URL penting: tombol di dalam email memakai alamat ini.
-   - SHOP_ADMIN_EMAIL: tujuan semua email untuk admin. Akun seeder admin@toko.test adalah alamat
-     fiktif, jadi isi dengan emailmu yang nyata supaya email admin benar-benar sampai.
-   - Gmail membutuhkan App Password (Akun Google -> Keamanan -> Verifikasi 2 Langkah aktif ->
-     Sandi aplikasi). Password Gmail biasa ditolak.
-   - Mau mencoba tanpa Gmail dulu? Pakai MAIL_MAILER=log. Email akan ditulis ke
-     storage\logs\laravel.log (bukan dikirim sungguhan).
-
+LANGKAH 1: PERBAIKI .env
+   Buka .env dan ubah/tambahkan (gunakan alamat NYATA milikmu):
+       APP_NAME="Darsu Store"
+       SHOP_NAME="Darsu Store"
+       SHOP_ADMIN_EMAIL=bahri420pedaww@gmail.com
+   (SHOP_ADMIN_EMAIL boleh sama dengan akun pengirim, atau Gmail lain milikmu yang aktif.)
    Lalu:
        php artisan config:clear
-       php artisan optimize:clear
 
-C. UJI PENGATURAN EMAIL
-       php artisan shop:test-mail emailkamu@gmail.com
-   Harus muncul "Email uji dikirim" dan email tiba (cek juga folder Spam). Kalau muncul
-   "Gagal mengirim", pesan errornya menunjukkan apa yang salah (misalnya
-   "Username and Password not accepted" = App Password salah atau Verifikasi 2 Langkah belum aktif).
+LANGKAH 2: GANTI EMAIL AKUN PEMBELI UJI DENGAN ALAMAT NYATA
+   Terminal Laragon (folder projek):
+       php artisan tinker
+   Ketik (satu baris), lalu Enter:
+       App\Models\User::where('email', 'pembeli@toko.test')->update(['email' => 'bahri420pedaww+pembeli1@gmail.com']);
+   Ketik exit untuk keluar. Email ke alamat "+pembeli1" tetap masuk ke kotak masukmu.
+   Mulai sekarang, login sebagai pembeli memakai email yang baru itu (password tetap "password").
 
-D. JALANKAN PEKERJA ANTREAN
-   Karena QUEUE_CONNECTION=database, email diproses oleh "worker". Di terminal terpisah,
-   biarkan terbuka selama pengujian:
-       php artisan queue:work
-   Setelah mengubah .env atau kode, hentikan worker (Ctrl+C) lalu jalankan lagi.
-   (Mau coba tanpa worker? Set QUEUE_CONNECTION=sync; email dikirim langsung saat itu juga,
-   tetapi checkout menunggu pengiriman email selesai.)
+LANGKAH 3: PASANG PERBAIKAN
+   1. git status harus "working tree clean" (commit dulu kalau belum).
+   2. Ekstrak zip ke folder projek (C:\laragon\www\Website-Penjualan-Toko).
+      Pilih REPLACE untuk:
+          app\Notifications\Concerns\DescribesOrder.php
+      File baru: resources\views\vendor\mail\html\header.blade.php
+   3. Terminal Laragon:
+          php artisan optimize:clear
+      Hentikan worker (Ctrl+C) lalu jalankan lagi: php artisan queue:work
 
-E. TES ALUR LENGKAP
-   Email pembeli tujuan harus alamat NYATA. Daftar akun baru di /register dengan emailmu,
-   atau pakai trik Gmail: emailkamu+pembeli1@gmail.com tetap masuk ke kotak masukmu.
-   (Akun seeder pembeli@toko.test adalah alamat fiktif.)
+   Yang berubah:
+     - Rincian pesanan di email kini berbentuk TABEL (produk, jumlah, subtotal).
+     - Header email menampilkan nama toko (SHOP_NAME), bukan logo "Laravel".
+     - Pengaman: email ke alamat contoh/fiktif (domain .test, example.com, emailkamu@gmail.com,
+       emailtoko@gmail.com) TIDAK dikirim lagi. Dicatat di storage\logs\laravel.log, dan tidak
+       ada lagi email pantulan.
 
-   1. Checkout satu pesanan sebagai pembeli.
-      -> Pembeli: "Pesanan ... berhasil dibuat".  Admin (SHOP_ADMIN_EMAIL): "Pesanan baru ...".
-   2. Bayar pesanan (popup Midtrans, atau: php artisan payments:simulate INV-... settlement).
-      -> Pembeli: "Pembayaran pesanan ... diterima".  Admin: "Pembayaran diterima: ...".
-   3. Sebagai admin: Proses pesanan, lalu Kirim pesanan dengan nomor resi.
-      -> Pembeli: "Pesananmu ... sedang dikirim" berisi kurir dan nomor resi.
-   4. Klik tombol di dalam email -> terbuka halaman pesanan yang benar.
-   5. Ulangi payments:simulate ... settlement untuk pesanan yang sama -> email "dibayar" TIDAK
-      terkirim dua kali.
-   6. Matikan worker (Ctrl+C), buat pesanan -> checkout tetap cepat dan sukses. Cek tabel "jobs"
-      di HeidiSQL: ada baris menunggu. Nyalakan worker lagi -> email terkirim, baris hilang.
-   7. Sengaja salahkan MAIL_PASSWORD, jalankan config:clear dan restart worker, buat pesanan:
-      checkout TETAP sukses. Setelah 3 kali percobaan, pekerjaan masuk tabel "failed_jobs".
-      Lihat dengan: php artisan queue:failed
-      Perbaiki .env, restart worker, lalu ulangi pengiriman: php artisan queue:retry all
+LANGKAH 4: BERSIHKAN KOTAK MASUK GMAIL
+   Di Gmail akun pengirim (bahri420pedaww@gmail.com):
+     1. Ketik di kolom pencarian:  from:mailer-daemon
+        Centang semua (dan "Pilih semua percakapan"), lalu Hapus.
+     2. Email uji lama yang masih tersisa bisa dicari dengan:  subject:INV-2026
+        Periksa dulu daftarnya sebelum menghapus.
 
-F. PEMECAHAN MASALAH
-   - Email tidak datang tetapi tidak ada error: worker belum jalan, atau tabel "jobs" menumpuk.
-     Jalankan php artisan queue:work, dan cek folder Spam.
-   - Tombol email menuju alamat salah: perbaiki APP_URL lalu restart worker.
-   - Setelah mengubah .env, selalu php artisan config:clear dan restart worker.
+LANGKAH 5: TES ULANG
+   1. Buat pesanan BARU sebagai pembeli (email bahri420pedaww+pembeli1@gmail.com), lalu bayar.
+   2. Yang harus masuk (tanpa email pantulan):
+        - "Pesanan INV-... berhasil dibuat"  (pembeli)
+        - "Pesanan baru INV-..."             (admin)
+        - "Pembayaran pesanan INV-... diterima" (pembeli)
+        - "Pembayaran diterima: INV-..."     (admin)
+   3. Buka salah satu email: header menampilkan "Darsu Store", rincian pesanan berbentuk tabel,
+      dan tombol di bawahnya membuka halaman pesanan.
+   4. Kalau email tidak masuk: cek tabel jobs dan failed_jobs di HeidiSQL, dan pastikan
+      php artisan queue:work berjalan.
 
-G. COMMIT DAN PUSH
+LANGKAH 6: COMMIT
        git add .
-       git commit -m "Email notifikasi pesanan lewat antrean"
+       git commit -m "Perbaikan email: tabel rincian, header toko, pengaman alamat contoh"
        git push
    Pastikan git status TIDAK menampilkan file .env.
