@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('auth')->group(function () {
     Route::get('/pesanan/{orderCode}/bayar', [PaymentController::class, 'show'])->name('payments.show');
     Route::post('/pesanan/{orderCode}/cek-pembayaran', [PaymentController::class, 'check'])->name('payments.check');
+    Route::get('/pesanan/{orderCode}/status', [PaymentController::class, 'status'])->name('payments.status');
 });
 
 // ---- Webhook Midtrans ----

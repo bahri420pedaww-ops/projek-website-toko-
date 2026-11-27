@@ -41,12 +41,17 @@ class OrderController extends Controller
             try {
                 $this->payments->syncLatest($order);
                 $order = $this->findOrder($request, $orderCode);
-
-                if ($order->status === Order::PAID) {
-                    session()->now('success', 'Pembayaran berhasil diterima.');
-                }
             } catch (Throwable $e) {
                 session()->now('warning', 'Status pembayaran belum bisa dicek otomatis. Gunakan tombol "Cek status pembayaran".');
+            }
+        }
+
+        // Halaman dimuat ulang oleh pembaruan otomatis (?diperbarui=1) atau setelah kembali dari pembayaran
+        if ($returnedFromPayment || $request->boolean('diperbarui')) {
+            if ($order->status === Order::PAID) {
+                session()->now('success', 'Pembayaran berhasil diterima.');
+            } elseif ($order->status === Order::CANCELLED) {
+                session()->now('warning', 'Pesanan ini sudah dibatalkan.');
             }
         }
 

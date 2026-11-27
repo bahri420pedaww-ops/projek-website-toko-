@@ -6,7 +6,9 @@
      histories: status, note, created_at
      payments: gateway_order_id, status, payment_type, paid_at, created_at
      shipment: tracking_number, shipped_at, delivered_at (bisa null)
-     Aksi pembeli (POST, @csrf): orders.cancel (status pending) | orders.receive (status shipped) --}}
+     Aksi pembeli (POST, @csrf): orders.cancel (status pending) | orders.receive (status shipped)
+     Pembaruan otomatis (status pending): skrip di bagian bawah memanggil route('payments.status')
+     tiap 5 detik lalu memuat ulang halaman begitu status berubah. --}}
 @extends('shop.layout')
 
 @section('title', 'Pesanan ' . $order->order_code)
@@ -157,6 +159,7 @@
                             Cek status pembayaran
                         </button>
                     </form>
+                    <p class="text-xs text-gray-400 text-center">Status diperbarui otomatis setelah kamu membayar.</p>
 
                     <form method="POST" action="{{ route('orders.cancel', $order->order_code) }}"
                           onsubmit="return confirm('Batalkan pesanan ini?')">
@@ -177,4 +180,47 @@
             </div>
         </aside>
     </div>
+
+    {{-- Pembaruan otomatis selama pesanan menunggu pembayaran --}}
+    @if ($order->status === 'pending')
+        <script>
+            (function () {
+                const statusUrl = @json(route('payments.status', $order->order_code));
+                const orderUrl = @json(route('orders.show', $order->order_code));
+                const intervalMs = 5000;
+                const maxChecks = 120; // sekitar 10 menit
+                let checks = 0;
+                let timer = null;
+
+                async function check() {
+                    if (document.hidden) return; // tidak memeriksa saat tab tidak terlihat
+
+                    checks++;
+
+                    try {
+                        const res = await fetch(statusUrl, {
+                            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                            credentials: 'same-origin'
+                        });
+
+                        if (res.ok) {
+                            const data = await res.json();
+
+                            if (data.status !== 'pending') {
+                                clearInterval(timer);
+                                window.location.href = orderUrl + '?diperbarui=1';
+                                return;
+                            }
+                        }
+                    } catch (e) { /* abaikan; dicoba lagi pada giliran berikutnya */ }
+
+                    if (checks >= maxChecks) clearInterval(timer);
+                }
+
+                timer = setInterval(check, intervalMs);
+                // Begitu pembeli kembali ke tab ini (misalnya setelah membayar di tab lain), langsung periksa
+                document.addEventListener('visibilitychange', function () { if (!document.hidden) check(); });
+            })();
+        </script>
+    @endif
 @endsection
