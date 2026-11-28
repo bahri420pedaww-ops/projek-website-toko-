@@ -35,6 +35,7 @@ class LoginController extends Controller
 
     public function destroy(Request $request): RedirectResponse
     {
+        $request->session()->forget('cart');
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();

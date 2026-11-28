@@ -24,20 +24,31 @@
                 </thead>
                 <tbody class="divide-y divide-slate-100">
                     @forelse ($orders as $order)
+                        @php
+                            $statusClasses = [
+                                'pending' => 'bg-yellow-100 text-yellow-800 border-yellow-200',
+                                'processing' => 'bg-blue-100 text-blue-800 border-blue-200',
+                                'shipped' => 'bg-purple-100 text-purple-800 border-purple-200',
+                                'completed' => 'bg-green-100 text-green-800 border-green-200',
+                                'cancelled' => 'bg-red-100 text-red-800 border-red-200',
+                            ];
+                            $badgeClass = $statusClasses[$order->status] ?? 'bg-gray-100 text-gray-800 border-gray-200';
+                        @endphp
                         <tr class="align-top hover:bg-slate-50/70">
                             <td class="whitespace-nowrap px-5 py-5 font-semibold text-slate-900">{{ $order->order_code }}</td>
                             <td class="px-5 py-5 text-slate-700">{{ $order->user?->name ?? 'Pelanggan' }}</td>
                             <td class="whitespace-nowrap px-5 py-5 font-medium text-slate-800">Rp {{ number_format($order->grand_total, 0, ',', '.') }}</td>
                             <td class="px-5 py-5">
-                                <span class="rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">{{ ucfirst($order->status) }}</span>
+                                <span class="inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold {{ $badgeClass }}">{{ ucfirst($order->status) }}</span>
                             </td>
                             <td class="whitespace-nowrap px-5 py-5 text-slate-500">{{ $order->created_at->format('d M Y, H:i') }}</td>
                             <td class="px-5 py-4">
-                                <form action="{{ route('admin.orders.update', $order) }}" method="POST" class="flex min-w-[270px] gap-2">
+                                <form action="{{ route('admin.orders.updateStatus', $order) }}" method="POST" class="flex min-w-[270px] gap-2">
                                     @csrf
                                     @method('PATCH')
                                     <label class="sr-only" for="status-{{ $order->id }}">Status pesanan</label>
                                     <select id="status-{{ $order->id }}" name="status" required class="min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100">
+                                        <option value="" disabled @selected(!in_array($order->status, $statuses, true))>Pilih status</option>
                                         @foreach ($statuses as $status)
                                             <option value="{{ $status }}" @selected($order->status === $status)>{{ ucfirst($status) }}</option>
                                         @endforeach

@@ -36,6 +36,26 @@ class CartController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
+        $response = $this->addValidatedProductToCart($request);
+        if ($response) {
+            return $response;
+        }
+
+        return redirect()->route('cart.index')->with('success', 'Produk ditambahkan ke keranjang.');
+    }
+
+    public function buyNow(Request $request): RedirectResponse
+    {
+        $response = $this->addValidatedProductToCart($request);
+        if ($response) {
+            return $response;
+        }
+
+        return redirect()->route('checkout.index');
+    }
+
+    private function addValidatedProductToCart(Request $request): ?RedirectResponse
+    {
         $validated = $request->validate([
             'product_id' => ['required', 'integer', 'exists:products,id'],
             'quantity' => ['required', 'integer', 'min:1', 'max:100'],
@@ -54,7 +74,7 @@ class CartController extends Controller
         $cart[$product->id] = $quantity;
         $request->session()->put('cart', $cart);
 
-        return redirect()->route('cart.index')->with('success', 'Produk ditambahkan ke keranjang.');
+        return null;
     }
 
     public function destroy(Request $request, int $productId): RedirectResponse

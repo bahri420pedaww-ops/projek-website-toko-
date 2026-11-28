@@ -49,7 +49,7 @@
     <label for="image" class="block text-sm font-semibold text-slate-700">Gambar Utama Produk</label>
     @if ($product->primaryImage)
         <div class="mt-3 flex items-center gap-4">
-            <img src="{{ asset('storage/' . $product->primaryImage->path) }}" alt="{{ $product->name }}" class="h-20 w-20 rounded-xl border border-slate-200 object-cover">
+            <img src="{{ \Illuminate\Support\Str::startsWith($product->primaryImage->path, ['http://', 'https://']) ? $product->primaryImage->path : asset('storage/' . $product->primaryImage->path) }}" alt="{{ $product->name }}" class="h-20 w-20 rounded-xl border border-slate-200 object-cover">
             <p class="text-sm text-slate-500">Gambar saat ini. Pilih file baru untuk menggantinya.</p>
         </div>
     @endif

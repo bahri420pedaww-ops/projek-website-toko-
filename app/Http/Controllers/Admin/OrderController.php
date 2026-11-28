@@ -21,7 +21,6 @@ class OrderController extends Controller
             'orders' => Order::with('user')->latest()->paginate(20),
             'statuses' => [
                 Order::PENDING,
-                Order::PAID,
                 Order::PROCESSING,
                 Order::SHIPPED,
                 Order::COMPLETED,
@@ -32,10 +31,14 @@ class OrderController extends Controller
 
     public function update(Request $request, Order $order): RedirectResponse
     {
+        return $this->updateStatus($request, $order);
+    }
+
+    public function updateStatus(Request $request, Order $order): RedirectResponse
+    {
         $validated = $request->validate([
             'status' => ['required', Rule::in([
                 Order::PENDING,
-                Order::PAID,
                 Order::PROCESSING,
                 Order::SHIPPED,
                 Order::COMPLETED,

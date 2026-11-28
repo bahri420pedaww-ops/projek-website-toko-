@@ -34,7 +34,7 @@
                                 <div class="flex items-center gap-3">
                                     <div class="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-slate-100">
                                         @if ($product->primaryImage)
-                                            <img src="{{ asset('storage/' . $product->primaryImage->path) }}" alt="{{ $product->name }}" class="h-full w-full object-cover">
+                                            <img src="{{ \Illuminate\Support\Str::startsWith($product->primaryImage->path, ['http://', 'https://']) ? $product->primaryImage->path : asset('storage/' . $product->primaryImage->path) }}" alt="{{ $product->name }}" class="h-full w-full object-cover">
                                         @else
                                             <div class="flex h-full items-center justify-center text-[10px] text-slate-400">No image</div>
                                         @endif

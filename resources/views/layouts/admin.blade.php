@@ -29,6 +29,13 @@
                    class="flex shrink-0 items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition {{ request()->routeIs('admin.orders.*') ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-950/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
                     <span aria-hidden="true">▤</span> Pesanan
                 </a>
+                <a href="{{ route('admin.customers.index') }}"
+                   class="flex shrink-0 items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition {{ request()->routeIs('admin.customers.*') ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-950/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                    <svg class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M20 21a8 8 0 00-16 0m12-13a4 4 0 11-8 0 4 4 0 018 0Z"/>
+                    </svg>
+                    Pelanggan
+                </a>
             </nav>
 
             <div class="hidden border-t border-slate-800 p-4 lg:block">

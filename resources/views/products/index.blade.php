@@ -2,6 +2,10 @@
 @section('title', 'Katalog - StyleShop')
 
 @section('content')
+@php
+    $placeholder = 'https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=800&q=80';
+@endphp
+
 <section class="bg-brand-50">
     <div class="max-w-6xl mx-auto px-4 py-10">
         <h1 class="text-3xl font-bold">Koleksi Fashion Terbaik</h1>
@@ -39,11 +43,14 @@
         <div class="grid grid-cols-2 lg:grid-cols-3 gap-4">
             @forelse ($products as $product)
                 <div class="bg-white rounded-xl shadow-sm overflow-hidden">
-                    <a href="{{ route('products.show', $product->slug) }}" class="h-44 bg-gray-100 flex items-center justify-center">
-                        @if ($product->primaryImage)
-                            <img src="{{ asset('storage/' . $product->primaryImage->path) }}" alt="{{ $product->name }}" class="w-full h-full object-cover">
+                    <a href="{{ route('products.show', $product->slug) }}" class="block h-44 overflow-hidden bg-gray-100">
+                        @if ($product->primaryImage && $product->primaryImage->path)
+                            <img src="{{ \Illuminate\Support\Str::startsWith($product->primaryImage->path, ['http://', 'https://']) ? $product->primaryImage->path : asset('storage/' . ltrim($product->primaryImage->path, '/')) }}"
+                                 alt="{{ $product->name }}" loading="lazy"
+                                 onerror="this.onerror=null;this.src='{{ $placeholder }}';"
+                                 class="h-full w-full object-cover">
                         @else
-                            <span class="text-gray-400 text-sm">Foto produk</span>
+                            <img src="{{ $placeholder }}" alt="{{ $product->name }}" loading="lazy" class="h-full w-full object-cover">
                         @endif
                     </a>
                     <div class="p-3">

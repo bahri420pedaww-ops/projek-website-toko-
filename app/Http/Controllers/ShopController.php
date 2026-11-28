@@ -23,8 +23,13 @@ class ShopController extends Controller
         $filters = $request->validate([
             'category' => ['sometimes', 'string', 'max:255', 'alpha_dash'],
             'sort' => ['sometimes', 'string', Rule::in(['newest', 'price_asc', 'price_desc'])],
+            'search' => ['sometimes', 'nullable', 'string', 'max:100'],
         ]);
         $query = Product::active()->with(['category', 'primaryImage']);
+
+        if (!empty($filters['search'])) {
+            $query->where('name', 'like', '%' . $filters['search'] . '%');
+        }
 
         if (!empty($filters['category'])) {
             $query->whereHas('category', function ($categoryQuery) use ($filters) {

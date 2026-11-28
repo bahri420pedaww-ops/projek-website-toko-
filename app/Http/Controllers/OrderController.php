@@ -17,11 +17,33 @@ class OrderController extends Controller
 {
     public function create(Request $request): View|RedirectResponse
     {
-        if (empty($request->session()->get('cart', []))) {
+        $cart = $request->session()->get('cart', []);
+        if (empty($cart)) {
             return redirect()->route('cart.index')->with('error', 'Keranjang masih kosong.');
         }
 
+        $products = Product::active()->with('primaryImage')
+            ->whereIn('id', array_keys($cart))
+            ->get()
+            ->keyBy('id');
+        $items = collect($cart)->map(function ($quantity, $productId) use ($products) {
+            return [
+                'product' => $products->get($productId),
+                'quantity' => $quantity,
+            ];
+        })->filter(function ($item) {
+            return $item['product'] !== null;
+        })->values();
+
+        if ($items->isEmpty()) {
+            return redirect()->route('cart.index')->with('error', 'Produk di keranjang sudah tidak tersedia.');
+        }
+
         return view('checkout', [
+            'items' => $items,
+            'subtotal' => $items->sum(function ($item) {
+                return $item['product']->price * $item['quantity'];
+            }),
             'shippingMethods' => ShippingMethod::active()->orderBy('cost')->get(),
         ]);
     }
@@ -37,8 +59,11 @@ class OrderController extends Controller
             'receiver_name' => ['required', 'string', 'max:255'],
             'receiver_phone' => ['required', 'string', 'max:20', 'regex:/^[0-9+().\\-\\s]+$/'],
             'shipping_address' => ['required', 'string', 'max:2000'],
-            'city_name' => ['required', 'string', 'max:255'],
             'province_name' => ['required', 'string', 'max:255'],
+            'city_name' => ['required', 'string', 'max:255'],
+            'district_name' => ['required', 'string', 'max:255'],
+            'village_name' => ['required', 'string', 'max:255'],
+            'payment_method' => ['required', 'in:transfer,cod'],
             'postal_code' => ['nullable', 'string', 'max:10', 'regex:/^[A-Za-z0-9\\s-]+$/'],
             'note' => ['nullable', 'string', 'max:2000'],
         ]);
@@ -80,11 +105,14 @@ class OrderController extends Controller
                 'order_code' => Order::generateCode(),
                 'user_id' => $request->user()->id,
                 'shipping_method_id' => $shippingMethod->id,
+                'payment_method' => $validated['payment_method'],
                 'receiver_name' => $validated['receiver_name'],
                 'receiver_phone' => $validated['receiver_phone'],
                 'shipping_address' => $validated['shipping_address'],
                 'city_name' => $validated['city_name'],
                 'province_name' => $validated['province_name'],
+                'district_name' => $validated['district_name'],
+                'village_name' => $validated['village_name'],
                 'postal_code' => $validated['postal_code'] ?? null,
                 'subtotal' => $subtotal,
                 'shipping_cost' => $shippingMethod->cost,
@@ -118,6 +146,32 @@ class OrderController extends Controller
 
         $request->session()->forget('cart');
 
-        return redirect()->route('home')->with('success', 'Pesanan ' . $order->order_code . ' berhasil dibuat.');
+        return redirect()->route('checkout.success', $order)->with('success', 'Pesanan berhasil dibuat.');
+    }
+
+    public function success(Order $order): View
+    {
+        abort_unless($order->user_id === auth()->id(), 404);
+
+        return view('checkout_success', ['order' => $order]);
+    }
+
+    public function myOrders(): View
+    {
+        return view('orders.index', [
+            'orders' => Order::where('user_id', auth()->id())
+                ->with('items.product')
+                ->latest()
+                ->get(),
+        ]);
+    }
+
+    public function show(Order $order): View
+    {
+        abort_unless($order->user_id === auth()->id(), 403);
+
+        $order->load(['items.product.primaryImage']);
+
+        return view('orders.show', ['order' => $order]);
     }
 }
