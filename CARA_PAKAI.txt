@@ -1,66 +1,46 @@
-PAKET LAPORAN PENJUALAN (ADMIN)
+PAKET FINISHING
 
-Halaman /admin/reports berisi:
-  - Filter tanggal + pintasan (Hari ini, 7 hari, 30 hari, Bulan ini, Bulan lalu)
-  - Kartu: total pendapatan (rincian barang dan ongkir), pesanan lunas, barang terjual,
-    rata-rata per pesanan, pelanggan baru
-  - Penjualan per hari (tabel dengan batang)
-  - Produk terlaris (10 teratas)
-  - Jumlah pesanan yang dibuat per status
-  - Stok menipis (stok 5 atau kurang)
-  - Tombol "Unduh CSV" (daftar pesanan lunas, dibuka di Excel)
+Isi:
+  - README.md dan .env.example baru (untuk teman satu tim dan penilai)
+  - Halaman error berbahasa Indonesia (403, 404, 419, 429, 500, 503)
+  - Pembatas laju permintaan (throttle) pada checkout, keranjang, pembayaran, dan webhook
+  - Perintah php artisan shop:create-admin (membuat admin dengan password pilihanmu sendiri)
+  - docs/PANDUAN_UJI.md (skenario uji untuk laporan) dan docs/CHECKLIST_PRODUKSI.md
 
-DEFINISI PENDAPATAN
-  Hanya pesanan yang pembayarannya BERHASIL (settlement), dihitung pada TANGGAL PEMBAYARAN.
-  Pesanan menunggu pembayaran dan dibatalkan tidak dihitung. Pendapatan = barang + ongkos kirim
-  - diskon. Karena pesanan yang sudah dibayar tidak bisa dibatalkan, pesanan berstatus
-  paid, processing, shipped, dan completed semuanya dihitung.
-
-1. Pastikan pekerjaan sebelumnya sudah di-commit (git status = "working tree clean").
+1. git status harus "working tree clean" (commit dulu kalau belum).
 
 2. Ekstrak zip ke folder projek (C:\laragon\www\Website-Penjualan-Toko).
-   Windows akan bertanya "Replace or Skip". Pilih REPLACE untuk:
-       routes\admin.php
-       resources\views\admin\dashboard.blade.php
-   Keduanya buatan paket sebelumnya; isinya hanya DITAMBAH (route laporan dan satu tautan).
-   File lain baru. Tidak ada migration dan tidak perlu mengedit routes/web.php.
+   Pilih REPLACE untuk:
+       README.md
+       .env.example
+       routes\shop.php
+       routes\payment.php
+   (README.md adalah bawaan Laravel yang diganti dokumentasi projekmu. .env.example hanya berisi
+   isian kosong, TIDAK berisi kunci rahasia. Kedua routes hanya DITAMBAH pembatas laju.)
+   File baru: app\Console\Commands\CreateAdmin.php, resources\views\errors\*, dan docs\*.
 
-3. Terminal Laragon (folder projek):
+3. Buka README.md dan isi nama pembagian kerja pada baris "Pembagian kerja".
+
+4. Terminal Laragon (folder projek):
        php artisan optimize:clear
-       php artisan route:list --name=reports
-   Harus muncul admin.reports.index dan admin.reports.export.
+       php artisan list shop
+   Harus muncul shop:create-admin dan shop:test-mail.
 
-4. TES (login admin)
-   a. /admin -> ada tautan "Laporan Penjualan".
-   b. /admin/reports -> tampil laporan 30 hari terakhir. Cocokkan dengan database. Di HeidiSQL:
-          SELECT COUNT(*) AS pesanan, SUM(o.grand_total) AS pendapatan
-          FROM orders o
-          JOIN payments p ON p.order_id = o.id AND p.status = 'settlement';
-      (kalau semua pembayaranmu terjadi dalam 30 hari terakhir, angkanya sama dengan kartu
-      "Pesanan lunas" dan "Total pendapatan".)
-   c. Buat satu pesanan dan JANGAN dibayar -> angka pendapatan tidak berubah, tetapi jumlah di
-      "Pesanan Dibuat" (Menunggu pembayaran) bertambah.
-   d. Bayar pesanan itu -> pendapatan dan jumlah pesanan lunas bertambah sesuai total pesanan.
-   e. Batalkan pesanan yang belum dibayar -> pendapatan tidak berubah; "Dibatalkan" bertambah.
-   f. Ubah rentang ke tanggal tanpa penjualan -> semua bernilai 0 dan tertulis
-      "Belum ada penjualan pada rentang ini."
-   g. Isi tanggal akhir sebelum tanggal awal -> muncul pesan kesalahan. Rentang lebih dari
-      1 tahun -> ditolak dengan pesan.
-   h. Ubah stok sebuah produk aktif menjadi 2 di /admin/products -> muncul di "Stok Menipis".
-      Stok 0 tertulis "Habis".
-   i. Klik "Unduh CSV" -> file laporan-penjualan-....csv terunduh. Buka dengan Excel: kolom
-      terpisah rapi (pemisah titik koma), nilai uang berupa angka murni. Kalau Excel kamu
-      menampilkan semuanya dalam satu kolom, pakai Data -> From Text/CSV -> pilih pemisah
-      titik koma (;).
-   j. Login sebagai pembeli, buka /admin/reports -> harus 403.
+5. TES
+   a. /halaman-tidak-ada -> halaman 404 berbahasa Indonesia.
+   b. Login sebagai pembeli, buka /admin -> halaman 403 berbahasa Indonesia.
+   c. Buat admin sungguhan:
+          php artisan shop:create-admin emailkamu@gmail.com --name="Nama Kamu"
+      (kamu diminta mengetik password dua kali; ketikan tidak terlihat di layar.)
+      Login memakai akun itu lalu buka /admin.
+   d. Pembatas laju: php artisan route:list --path=pesanan menunjukkan middleware throttle, atau
+      klik "Buat Pesanan" lebih dari 10 kali dalam semenit -> halaman 429.
+   e. Jalankan seluruh skenario di docs/PANDUAN_UJI.md dan isi kolom Hasil.
 
-CATATAN
-  - Data uji lama yang dibayar sebelum zona waktu diubah ke Asia/Jakarta tercatat 7 jam lebih
-    awal, sehingga bisa masuk tanggal sebelumnya. Itu wajar dan hanya untuk data uji.
-  - Laporan dihitung langsung dari database setiap kali dibuka. Cukup cepat untuk ribuan
-    pesanan; untuk jutaan pesanan, perlu tabel ringkasan (di luar cakupan tugas ini).
-
-5. Commit dan push:
+6. Commit dan push:
        git add .
-       git commit -m "Laporan penjualan admin: ringkasan, per hari, produk terlaris, ekspor CSV"
+       git commit -m "Finishing: dokumentasi, halaman error, pembatas laju, perintah buat admin"
        git push
+   Pastikan git status TIDAK menampilkan file .env.
+
+7. Gabungkan ke main (lihat penjelasan di jawaban).

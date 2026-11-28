@@ -1,66 +1,118 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Website Penjualan Toko (Darsu Store)
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Aplikasi toko online berbasis **Laravel 10** dengan pembayaran **Midtrans**, ongkos kirim dari berat dan
+kota tujuan, notifikasi email, dan panel admin.
 
-## About Laravel
+> Pembagian kerja: **Backend**: (isi nama) | **Frontend**: (isi nama)
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Fitur
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+**Pembeli**
+- Daftar dan masuk akun, katalog produk (cari, filter kategori, urutkan), detail produk
+- Keranjang belanja, alamat tersimpan (dengan pilihan lokasi di peta), checkout
+- Ongkos kirim otomatis dari berat dan kota tujuan
+- Pembayaran Midtrans (Snap), status pembayaran diperbarui otomatis
+- Riwayat pesanan, pembatalan, dan konfirmasi pesanan diterima
+- Email notifikasi: akun dibuat, pesanan dibuat, dibayar, dikirim, kurir mengantar, selesai, dibatalkan
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+**Admin** (`/admin`)
+- Kelola kategori dan produk (banyak gambar), pelanggan dan alamatnya
+- Kelola pesanan: proses, kirim (nomor resi), tandai selesai, batalkan
+- Layanan kurir dan tarif ongkir per zona
+- Laporan penjualan: ringkasan, per hari, produk terlaris, stok menipis, ekspor CSV
 
-## Learning Laravel
+## Teknologi
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+Laravel 10, PHP 8.1+, MySQL/MariaDB, Blade + Tailwind CSS (Vite), Laravel Breeze, Midtrans Snap,
+Leaflet + OpenStreetMap, antrean database.
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+## Cara menjalankan (Laragon/Windows)
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+```bash
+git clone <url-repository>
+cd Website-Penjualan-Toko
+composer install
+copy .env.example .env
+php artisan key:generate
+```
 
-## Laravel Sponsors
+1. Buat database kosong `toko_online` (HeidiSQL), lalu cek `DB_*` di `.env`.
+2. Jalankan:
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+```bash
+php artisan migrate --seed
+php artisan storage:link
+npm install
+npm run dev
+```
 
-### Premium Partners
+3. Buka `http://website-penjualan-toko.test` (atau jalankan `php artisan serve` lalu buka `http://127.0.0.1:8000`).
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+Email, antrean, dan Midtrans bersifat opsional untuk menjalankan aplikasi. Cara mengaktifkannya ada di bagian bawah.
 
-## Contributing
+## Akun uji (dibuat oleh seeder)
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+| Peran | Email | Password |
+|---|---|---|
+| Admin | `admin@toko.test` | `password` |
+| Pembeli | `pembeli@toko.test` | `password` |
 
-## Code of Conduct
+Akun ini hanya untuk pengembangan. Alamat `.test` adalah alamat fiktif, jadi email ke sana tidak dikirim.
+Untuk menguji email, daftar akun baru dengan email nyata. Buat admin sungguhan dengan
+`php artisan shop:create-admin email@anda.com`.
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+## Mengaktifkan email
 
-## Security Vulnerabilities
+1. Di `.env`, ubah `MAIL_MAILER=smtp`, isi `MAIL_USERNAME`, `MAIL_FROM_ADDRESS`, dan `MAIL_PASSWORD`
+   (App Password Gmail: Akun Google, Keamanan, Verifikasi 2 Langkah, Sandi aplikasi).
+2. Isi `SHOP_ADMIN_EMAIL` dengan email admin yang nyata.
+3. `php artisan config:clear`, uji dengan `php artisan shop:test-mail emailanda@gmail.com`.
+4. Jalankan pekerja antrean di terminal terpisah: `php artisan queue:work`.
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+## Mengaktifkan pembayaran Midtrans (sandbox)
 
-## License
+1. Buat akun di `dashboard.sandbox.midtrans.com`, ambil Server Key dan Client Key (Settings, Access Keys).
+2. Isi `MIDTRANS_SERVER_KEY` dan `MIDTRANS_CLIENT_KEY` di `.env`, lalu `php artisan config:clear`.
+3. Status pembayaran diperbarui otomatis oleh halaman pesanan. Untuk webhook di komputer lokal gunakan ngrok
+   dan `MIDTRANS_NOTIFICATION_URL=ngrok`, lalu cek dengan `php artisan midtrans:webhook-url --ping`.
+4. Meniru notifikasi tanpa internet: `php artisan payments:simulate INV-... settlement`.
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+## Perintah yang berguna
+
+| Perintah | Fungsi |
+|---|---|
+| `php artisan queue:work` | Mengirim email dari antrean |
+| `php artisan orders:expire-unpaid` | Batalkan pesanan yang tidak dibayar dan kembalikan stok |
+| `php artisan shop:test-mail email` | Uji pengaturan email |
+| `php artisan shop:create-admin email` | Buat akun admin |
+| `php artisan payments:simulate INV-... settlement` | Simulasi notifikasi Midtrans (sandbox) |
+| `php artisan midtrans:webhook-url --ping` | Cek alamat webhook ngrok |
+
+## Alur pesanan
+
+```
+pending -> paid -> processing -> shipped -> completed
+pending -> cancelled
+```
+
+Pesanan yang sudah dibayar tidak dapat dibatalkan (tidak ada fitur refund). Stok dikurangi saat pesanan dibuat
+dan dikembalikan saat pesanan dibatalkan atau pembayaran kedaluwarsa.
+
+## Struktur penting
+
+| Lokasi | Isi |
+|---|---|
+| `app/Services` | Logika bisnis: keranjang, checkout, ongkir, pembayaran, status pesanan, laporan |
+| `app/Http/Controllers/Admin` | Panel admin |
+| `app/Http/Controllers/Shop`, `Account` | Halaman pembeli |
+| `app/Notifications`, `Listeners`, `Events` | Email notifikasi |
+| `routes/shop.php`, `account.php`, `payment.php`, `admin.php` | Route per area |
+| `resources/views` | Tampilan (placeholder backend, didesain ulang oleh frontend) |
+| `docs/` | Kontrak backend-frontend, panduan uji, checklist produksi |
+
+## Keamanan
+
+- `.env` tidak boleh di-commit (sudah di `.gitignore`). Server Key Midtrans dan App Password bersifat rahasia.
+- Signature setiap notifikasi Midtrans diverifikasi. Halaman admin dilindungi middleware `admin`.
+- Proses checkout memakai transaksi database dan penguncian baris agar stok tidak terjual ganda.
+- Sebelum dipasang di server sungguhan, ikuti `docs/CHECKLIST_PRODUKSI.md`.
