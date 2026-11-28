@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\ProductImageController;
+use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\ShippingMethodController;
 use Illuminate\Support\Facades\Route;
 
@@ -37,6 +38,11 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::resource('orders', OrderController::class)->only(['index', 'show']);
     Route::post('orders/{order}/process', [OrderController::class, 'process'])->name('orders.process');
     Route::post('orders/{order}/ship', [OrderController::class, 'ship'])->name('orders.ship');
+    Route::post('orders/{order}/deliver', [OrderController::class, 'deliver'])->name('orders.deliver');
     Route::post('orders/{order}/complete', [OrderController::class, 'complete'])->name('orders.complete');
     Route::post('orders/{order}/cancel', [OrderController::class, 'cancel'])->name('orders.cancel');
+
+    // Laporan penjualan
+    Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
+    Route::get('reports/export', [ReportController::class, 'export'])->name('reports.export');
 });

@@ -1,53 +1,66 @@
-PERBAIKAN: STATUS PEMBAYARAN BERUBAH SENDIRI (TANPA KLIK "CEK STATUS")
+PAKET LAPORAN PENJUALAN (ADMIN)
 
-PENYEBAB
-Setelah pembeli membayar (misalnya lewat DANA di halaman/tab lain), halaman pesanan yang
-masih terbuka tidak tahu bahwa pembayaran sudah selesai. Dua jalur pemberitahuan otomatis
-yang ada tidak menjangkaunya: webhook Midtrans tidak bisa sampai ke localhost, dan pengecekan
-otomatis lainnya hanya jalan saat pembeli dikembalikan oleh popup atau pengalihan Midtrans.
+Halaman /admin/reports berisi:
+  - Filter tanggal + pintasan (Hari ini, 7 hari, 30 hari, Bulan ini, Bulan lalu)
+  - Kartu: total pendapatan (rincian barang dan ongkir), pesanan lunas, barang terjual,
+    rata-rata per pesanan, pelanggan baru
+  - Penjualan per hari (tabel dengan batang)
+  - Produk terlaris (10 teratas)
+  - Jumlah pesanan yang dibuat per status
+  - Stok menipis (stok 5 atau kurang)
+  - Tombol "Unduh CSV" (daftar pesanan lunas, dibuka di Excel)
 
-PERBAIKAN
-Selama pesanan berstatus "Menunggu pembayaran", halaman pesanan dan halaman bayar bertanya ke
-server tiap 5 detik. Server membaca status dari database, dan kalau belum lunas, bertanya
-langsung ke Midtrans (maksimal sekali per 4 detik per pesanan). Begitu status berubah, halaman
-dimuat ulang dan menampilkan "Sudah dibayar" beserta pesan hijau.
-  - Tidak memeriksa saat tab tersembunyi, dan langsung memeriksa saat kamu kembali ke tab itu.
-  - Berhenti sendiri setelah sekitar 10 menit.
-  - Kalau webhook (ngrok) aktif dan lebih dulu mengubah status, halaman ikut berubah di
-    pengecekan berikutnya, tanpa menunggu Midtrans.
+DEFINISI PENDAPATAN
+  Hanya pesanan yang pembayarannya BERHASIL (settlement), dihitung pada TANGGAL PEMBAYARAN.
+  Pesanan menunggu pembayaran dan dibatalkan tidak dihitung. Pendapatan = barang + ongkos kirim
+  - diskon. Karena pesanan yang sudah dibayar tidak bisa dibatalkan, pesanan berstatus
+  paid, processing, shipped, dan completed semuanya dihitung.
 
-PASANG
-1. git status harus "working tree clean" (commit dulu kalau belum).
+1. Pastikan pekerjaan sebelumnya sudah di-commit (git status = "working tree clean").
+
 2. Ekstrak zip ke folder projek (C:\laragon\www\Website-Penjualan-Toko).
-   Pilih REPLACE untuk semua file yang ditanyakan:
-       app\Http\Controllers\Shop\PaymentController.php
-       app\Http\Controllers\Shop\OrderController.php
-       routes\payment.php
-       resources\views\shop\orders\show.blade.php
-       resources\views\shop\payments\show.blade.php
-   Semuanya buatan paket sebelumnya; isinya hanya DITAMBAH. OrderController sudah mencakup
-   perbaikan "kembali dari Midtrans" (paket midtrans-finish), jadi aman walau paket itu belum
-   dipasang. Kalau teman sudah mengubah dua view di atas, JANGAN timpa view-nya; kabari saya.
-   Tidak ada migration dan tidak perlu mengedit routes/web.php.
-3. Terminal Laragon:
+   Windows akan bertanya "Replace or Skip". Pilih REPLACE untuk:
+       routes\admin.php
+       resources\views\admin\dashboard.blade.php
+   Keduanya buatan paket sebelumnya; isinya hanya DITAMBAH (route laporan dan satu tautan).
+   File lain baru. Tidak ada migration dan tidak perlu mengedit routes/web.php.
+
+3. Terminal Laragon (folder projek):
        php artisan optimize:clear
-       php artisan route:list --name=payments
-   Harus muncul payments.status.
+       php artisan route:list --name=reports
+   Harus muncul admin.reports.index dan admin.reports.export.
 
-TES
-a. Buat pesanan baru, klik "Bayar sekarang", bayar (DANA/VA di simulator sandbox).
-   Biarkan halaman PESANAN terbuka di tab lain. Dalam sekitar 5-10 detik halaman itu berubah
-   sendiri menjadi "Sudah dibayar" dengan pesan hijau, tanpa klik apa pun.
-b. Pindah ke tab lain, bayar, lalu kembali ke tab pesanan: langsung diperbarui.
-c. Tanpa Midtrans: php artisan payments:simulate INV-... settlement -> halaman pesanan yang
-   terbuka berubah sendiri dalam 5 detik.
-d. Selama belum dibayar, halaman TIDAK memuat ulang terus-menerus. Buka F12 -> tab Network:
-   terlihat permintaan "status" tiap 5 detik, dan berhenti setelah status berubah.
-e. Buka /pesanan/{kode pesanan orang lain}/status dengan akun lain -> 404.
-f. Pesanan yang dibatalkan (misalnya lewat payments:simulate ... expire): halaman berubah
-   sendiri menjadi "Dibatalkan" dengan pesan kuning.
+4. TES (login admin)
+   a. /admin -> ada tautan "Laporan Penjualan".
+   b. /admin/reports -> tampil laporan 30 hari terakhir. Cocokkan dengan database. Di HeidiSQL:
+          SELECT COUNT(*) AS pesanan, SUM(o.grand_total) AS pendapatan
+          FROM orders o
+          JOIN payments p ON p.order_id = o.id AND p.status = 'settlement';
+      (kalau semua pembayaranmu terjadi dalam 30 hari terakhir, angkanya sama dengan kartu
+      "Pesanan lunas" dan "Total pendapatan".)
+   c. Buat satu pesanan dan JANGAN dibayar -> angka pendapatan tidak berubah, tetapi jumlah di
+      "Pesanan Dibuat" (Menunggu pembayaran) bertambah.
+   d. Bayar pesanan itu -> pendapatan dan jumlah pesanan lunas bertambah sesuai total pesanan.
+   e. Batalkan pesanan yang belum dibayar -> pendapatan tidak berubah; "Dibatalkan" bertambah.
+   f. Ubah rentang ke tanggal tanpa penjualan -> semua bernilai 0 dan tertulis
+      "Belum ada penjualan pada rentang ini."
+   g. Isi tanggal akhir sebelum tanggal awal -> muncul pesan kesalahan. Rentang lebih dari
+      1 tahun -> ditolak dengan pesan.
+   h. Ubah stok sebuah produk aktif menjadi 2 di /admin/products -> muncul di "Stok Menipis".
+      Stok 0 tertulis "Habis".
+   i. Klik "Unduh CSV" -> file laporan-penjualan-....csv terunduh. Buka dengan Excel: kolom
+      terpisah rapi (pemisah titik koma), nilai uang berupa angka murni. Kalau Excel kamu
+      menampilkan semuanya dalam satu kolom, pakai Data -> From Text/CSV -> pilih pemisah
+      titik koma (;).
+   j. Login sebagai pembeli, buka /admin/reports -> harus 403.
 
-COMMIT
+CATATAN
+  - Data uji lama yang dibayar sebelum zona waktu diubah ke Asia/Jakarta tercatat 7 jam lebih
+    awal, sehingga bisa masuk tanggal sebelumnya. Itu wajar dan hanya untuk data uji.
+  - Laporan dihitung langsung dari database setiap kali dibuka. Cukup cepat untuk ribuan
+    pesanan; untuk jutaan pesanan, perlu tabel ringkasan (di luar cakupan tugas ini).
+
+5. Commit dan push:
        git add .
-       git commit -m "Status pembayaran diperbarui otomatis di halaman pesanan"
+       git commit -m "Laporan penjualan admin: ringkasan, per hari, produk terlaris, ekspor CSV"
        git push

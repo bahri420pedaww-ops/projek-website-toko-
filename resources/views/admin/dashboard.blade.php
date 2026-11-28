@@ -38,6 +38,10 @@
                    class="block bg-white p-6 shadow-sm sm:rounded-lg text-gray-800 hover:bg-gray-50">
                     Kelola Pesanan
                 </a>
+                <a href="{{ route('admin.reports.index') }}"
+                   class="block bg-white p-6 shadow-sm sm:rounded-lg text-gray-800 hover:bg-gray-50">
+                    Laporan Penjualan
+                </a>
                 <a href="{{ route('admin.categories.index') }}"
                    class="block bg-white p-6 shadow-sm sm:rounded-lg text-gray-800 hover:bg-gray-50">
                     Kelola Kategori
